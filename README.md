@@ -1,4 +1,4 @@
-# Nutri — AI Nutrition & Calorie Tracking App
+# Vitals — AI Nutrition & Calorie Tracking App
 
 Milestone 1: project setup, architecture, authentication, navigation, design system, and Supabase integration.
 

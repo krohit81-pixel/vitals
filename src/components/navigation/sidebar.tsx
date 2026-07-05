@@ -15,7 +15,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white">
           <Leaf size={17} />
         </div>
-        <span className="font-display text-lg font-semibold">Nutri</span>
+        <span className="font-display text-lg font-semibold">Vitals</span>
       </div>
 
       <button

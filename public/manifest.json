@@ -1,6 +1,6 @@
 {
-  "name": "Nutri — AI Nutrition Coach",
-  "short_name": "Nutri",
+  "name": "Vitals — AI Nutrition Coach",
+  "short_name": "Vitals",
   "description": "Effortless AI-powered food logging and coaching.",
   "start_url": "/dashboard",
   "display": "standalone",

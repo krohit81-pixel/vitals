@@ -17,9 +17,9 @@ const display = Lexend({
 });
 
 export const metadata: Metadata = {
-  title: "Nutri — Your AI Nutrition Coach",
+  title: "Vitals — Your AI Nutrition Coach",
   description:
-    "Effortless food logging. Point your camera, speak, or type — Nutri handles the rest.",
+    "Effortless food logging. Point your camera, speak, or type — Vitals handles the rest.",
   manifest: "/manifest.json",
 };
 
