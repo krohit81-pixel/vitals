@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-cream text-ink dark:bg-graphite dark:text-cream-100 antialiased;
+    font-family: var(--font-body);
+  }
+}
+
+@layer components {
+  /* Semi-transparent, blurred card — the app's signature surface */
+  .glass-card {
+    @apply relative rounded-2xl border border-black/[0.04] bg-white/70 shadow-soft backdrop-blur-md;
+    @apply dark:border-white/[0.06] dark:bg-graphite-50/60;
+  }
+
+  .glass-card-solid {
+    @apply relative rounded-2xl border border-black/[0.04] bg-white shadow-soft;
+    @apply dark:border-white/[0.06] dark:bg-graphite-50;
+  }
+
+  .pressable {
+    @apply transition-transform duration-150 active:scale-[0.97];
+  }
+
+  .skeleton {
+    @apply animate-shimmer rounded-xl bg-gradient-to-r from-black/5 via-black/10 to-black/5 bg-[length:200%_100%];
+    @apply dark:from-white/5 dark:via-white/10 dark:to-white/5;
+  }
+}
+
+/* Hide scrollbar on horizontal meal-timeline strips, keep it scrollable */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
