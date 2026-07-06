@@ -1,38 +1,48 @@
-# Changes
+# Changes — fix Gemini vision/text pipeline failing on every request
 
-## Fix: build error on `/meals/new` — `useSearchParams()` needs a Suspense boundary
+**Files to replace:**
+- `src/lib/ai/providers/gemini.ts` — **replace** (attached in `vitals-gemini-model-fix.zip`)
 
-**Error you hit:**
+One line changed. No SQL, no other files.
+
+---
+
+## What you saw
+
+The generic red box ("An error occurred in the Server Components render...") on Manual
+entry, Photo, and Voice — anything that called the AI. That message itself is expected
+behavior: Next.js masks real error text in production builds so server internals don't
+leak to the client. The box and "Try again" link you saw are actually *our own*
+error-handling UI in `new-meal-flow.tsx` working correctly — it just had nothing more
+specific to show, since Next stripped the real message before it got there.
+
+## Root cause
+
+`gemini.ts` had the model hardcoded as `gemini-2.0-flash`. Google shut that model down
+on **June 1, 2026**. Every call — manual entry, photo analysis, voice, clarification
+refinement, coach feedback — goes through this one `MODEL` constant, so all of them broke
+at once, which matches what you saw (Manual entry failing immediately on analyze).
+
+## Fix
+
+```diff
+- const MODEL = "gemini-2.0-flash"; // fast + multimodal; swap via env if needed later
++ const MODEL = "gemini-2.5-flash"; // gemini-2.0-flash was shut down by Google June 1, 2026
 ```
-⨯ useSearchParams() should be wrapped in a suspense boundary at page "/meals/new"
-Error occurred prerendering page "/meals/new"
-```
 
-**Why:** `next build` tries to statically render every page it can. `useSearchParams()` depends on the actual request URL, which doesn't exist at build time — so Next needs a `<Suspense>` boundary around anything that calls it, as a signal for "render this part per-request, not at build time." `next dev` doesn't enforce this, which is why it only showed up once you ran `npm run build`.
+`gemini-2.5-flash` is Google's current recommended stable replacement.
 
-**Fix applied:** split `src/app/(app)/meals/new/page.tsx` in two:
+## What to do
 
-- **`new-meal-flow.tsx`** (new file) — all the existing client logic, moved here verbatim. Only change: `export default function NewMealPage()` → `export function NewMealFlow()`.
-- **`page.tsx`** (rewritten) — now just a thin wrapper:
+1. Replace `src/lib/ai/providers/gemini.ts` with the attached version.
+2. Redeploy.
+3. Try the same manual entry again — should analyze normally now.
 
-```tsx
-import { Suspense } from "react";
-import { NewMealFlow } from "./new-meal-flow";
+## Worth knowing for later
 
-export default function NewMealPage() {
-  return (
-    <Suspense fallback={<div className="skeleton h-64 w-full" />}>
-      <NewMealFlow />
-    </Suspense>
-  );
-}
-```
-
-### What to do
-
-1. In your repo, create `src/app/(app)/meals/new/new-meal-flow.tsx` with the full content of your current `page.tsx`, but change the export line at the top from
-   `export default function NewMealPage() {` to `export function NewMealFlow() {`.
-2. Replace `src/app/(app)/meals/new/page.tsx` with the wrapper above.
-3. `npm run build` again — should pass cleanly now.
-
-No other files changed, no other pages affected (this was the only spot using `useSearchParams`).
+Model names in this space move fast — Google's deprecation cadence has been every few
+months this year. If a similar error shows up again down the line, check
+`src/lib/ai/providers/gemini.ts`'s `MODEL` constant first, before assuming it's a code bug.
+Since I don't have live visibility into your running app, I can't catch this proactively —
+if a capture flow ever stops working, that constant (or Google's model-deprecations page)
+is the first place to look.

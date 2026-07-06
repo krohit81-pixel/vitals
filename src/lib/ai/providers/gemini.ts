@@ -3,7 +3,7 @@ import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis } from
 import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt } from "../prompts";
 import { extractJson, toMealAnalysis } from "../json";
 
-const MODEL = "gemini-2.0-flash"; // fast + multimodal; swap via env if needed later
+const MODEL = "gemini-2.5-flash"; // gemini-2.0-flash was shut down by Google on June 1, 2026
 
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
