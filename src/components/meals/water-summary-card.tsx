@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Droplets, Plus, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { logWaterAction } from "@/lib/nutrition/water-actions";
+import { localTodayString } from "@/lib/nutrition/date";
 
 export function WaterSummaryCard({ initialMl, targetMl }: { initialMl: number; targetMl: number }) {
   const [totalMl, setTotalMl] = useState(initialMl);
@@ -12,7 +13,7 @@ export function WaterSummaryCard({ initialMl, targetMl }: { initialMl: number; t
 
   const quickAdd = (amount: number) => {
     startTransition(async () => {
-      const newTotal = await logWaterAction(amount);
+      const newTotal = await logWaterAction(amount, localTodayString());
       setTotalMl(newTotal);
       setJustAdded(true);
       setTimeout(() => setJustAdded(false), 1200);

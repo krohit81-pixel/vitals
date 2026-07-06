@@ -2,16 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { MealAnalysis } from "@/lib/ai/types";
 import type { MealType } from "./meal-type";
+import { toDateString } from "./date";
 
 type Client = SupabaseClient<Database>;
-
-function todayDateString(date: Date = new Date()): string {
-  // Local calendar date (not UTC) — a meal logged at 11pm shouldn't roll into tomorrow.
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
 
 /** Recomputes daily_totals for a given date from the source-of-truth meal_logs rows. */
 export async function recomputeDailyTotals(
@@ -99,7 +92,7 @@ export async function persistMeal(supabase: Client, input: PersistMealInput) {
 
   if (mealError) throw mealError;
 
-  await recomputeDailyTotals(supabase, userId, todayDateString(now));
+  await recomputeDailyTotals(supabase, userId, toDateString(now));
 
   return meal;
 }

@@ -18,34 +18,41 @@ export function CalorieRing({
   const circumference = 2 * Math.PI * radius;
 
   return (
-    <div className="relative flex flex-col items-center justify-center py-4">
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          strokeWidth={stroke}
-          className="fill-none stroke-black/[0.05] dark:stroke-white/[0.06]"
-        />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          className="fill-none stroke-emerald-500"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: circumference * (1 - pct) }}
-          transition={{ duration: 1, ease: "easeOut" }}
-        />
-      </svg>
+    <div className="flex flex-col items-center py-4">
+      {/* This wrapper is sized exactly to the ring and holds nothing else, so the
+          absolutely-positioned text is centered on the ring itself — not on the
+          ring-plus-stats-row below it, which was the bug: with the stats row as a
+          flex sibling in the same container, the browser centered the overlay
+          relative to their *combined* height, pulling the text downward. */}
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            strokeWidth={stroke}
+            className="fill-none stroke-black/[0.05] dark:stroke-white/[0.06]"
+          />
+          <motion.circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            className="fill-none stroke-emerald-500"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: circumference * (1 - pct) }}
+            transition={{ duration: 1, ease: "easeOut" }}
+          />
+        </svg>
 
-      <div className="absolute flex flex-col items-center">
-        <span className="font-display text-4xl font-semibold tabular-nums text-ink dark:text-cream-100">
-          {remaining.toLocaleString()}
-        </span>
-        <span className="text-sm text-black/50 dark:text-white/50">calories remaining</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="font-display text-4xl font-semibold tabular-nums text-ink dark:text-cream-100">
+            {remaining.toLocaleString()}
+          </span>
+          <span className="text-sm text-black/50 dark:text-white/50">calories remaining</span>
+        </div>
       </div>
 
       <div className="mt-5 flex w-full justify-between px-2 text-center">

@@ -3,15 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-function todayDateString(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-export async function logWaterAction(amountMl: number) {
+/**
+ * `dateStr` must be computed client-side (see `localTodayString()` in
+ * lib/nutrition/date.ts) and passed in — computing "today" here, server-side,
+ * would use the server's UTC clock rather than the caller's actual local day,
+ * the same bug class fixed for meal timestamps and the dashboard greeting.
+ */
+export async function logWaterAction(amountMl: number, dateStr: string) {
   if (!Number.isFinite(amountMl) || amountMl <= 0) {
     throw new Error("Enter a positive amount of water in ml.");
   }
@@ -22,7 +20,7 @@ export async function logWaterAction(amountMl: number) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const date = todayDateString();
+  const date = dateStr;
 
   const { data: existing } = await supabase
     .from("daily_totals")

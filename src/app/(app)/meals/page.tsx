@@ -6,25 +6,20 @@ import { MealCard, type MealCardData } from "@/components/shared/meal-card";
 import { WaterSummaryCard } from "@/components/meals/water-summary-card";
 import { MEAL_TYPE_LABELS, type MealType } from "@/lib/nutrition/meal-type";
 import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
-import { formatFriendlyDate } from "@/lib/nutrition/date";
+import { DateNavigator } from "@/components/shared/date-navigator";
 
 const SECTION_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
-function todayDateString() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+export default async function MealsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const params = await searchParams;
+  // Rough server-side guess for first paint only — DateNavigator corrects
+  // this client-side to the viewer's real local date (see its comments).
+  const date = params.date ?? new Date().toISOString().slice(0, 10);
 
-function startOfTodayISO() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-export default async function MealsPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,14 +30,10 @@ export default async function MealsPage() {
       .from("meal_logs")
       .select("id, meal_type, calories, protein_g, carbs_g, fat_g, logged_at, detected_items")
       .eq("user_id", user!.id)
-      .gte("logged_at", startOfTodayISO())
+      .gte("logged_at", `${date}T00:00:00`)
+      .lte("logged_at", `${date}T23:59:59`)
       .order("logged_at", { ascending: false }),
-    supabase
-      .from("daily_totals")
-      .select("water_ml")
-      .eq("user_id", user!.id)
-      .eq("date", todayDateString())
-      .single(),
+    supabase.from("daily_totals").select("water_ml").eq("user_id", user!.id).eq("date", date).single(),
     supabase.from("goals").select("water_target_ml").eq("user_id", user!.id).single(),
   ]);
 
@@ -67,12 +58,9 @@ export default async function MealsPage() {
   })).filter((section) => section.meals.length > 0);
 
   return (
-    <div className="animate-fade-up space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Meals</h1>
-          <p className="mt-1 text-xs text-black/40 dark:text-white/40">{formatFriendlyDate()}</p>
-        </div>
+    <div className="animate-fade-up space-y-5">
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Meals</h1>
         <div className="flex items-center gap-2">
           <Link
             href="/meals/new?mode=manual"
@@ -84,6 +72,8 @@ export default async function MealsPage() {
         </div>
       </div>
 
+      <DateNavigator view="day" />
+
       {/* Water gets its own section, separate from the meal-type groups below */}
       <WaterSummaryCard
         initialMl={Math.round(Number(totals?.water_ml ?? 0))}
@@ -93,8 +83,8 @@ export default async function MealsPage() {
       {sections.length === 0 ? (
         <EmptyState
           icon={UtensilsCrossed}
-          title="No meals logged yet today"
-          description="Tap the + button to log your first meal — by photo, voice, or just typing what you ate."
+          title="No meals logged this day"
+          description="Tap the + button to log a meal — by photo, voice, or just typing what you ate."
         />
       ) : (
         sections.map((section) => (

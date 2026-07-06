@@ -3,6 +3,26 @@
 Items mentioned as "later"/"future" during development, kept here so they don't get lost.
 Not yet built. Move items into an actual milestone/version when ready to build.
 
+## Shipped in Milestone 3
+
+- ~~Date navigation on Dashboard and Meals~~ → prev/next arrows + calendar-picker
+  (`DateNavigator`), URL-driven (`?date=YYYY-MM-DD`), reusable across both pages.
+- ~~Dashboard Today/Week/Month views~~ → `PeriodSelector` + `TrendsView`, sharing one
+  `getDailyTotalsRange()` data helper and one `MetricTrendCard` component per metric.
+- ~~Trend charts for calories, protein, carbs, fat, fibre, water~~ → `MetricTrendCard`
+  (recharts-based), built generically (label/unit/color/data/target props only, no
+  nutrition-specific logic) so weight tracking or any future metric can reuse it as-is.
+- Consistency scoring (`calcConsistency`) — % of days hitting ≥80% of target — used as the
+  small KPI badge on each trend card instead of long text summaries, per the "charts over
+  text" direction.
+
+**Known limitation carried over, not fixed this round:** the day-boundary issue noted
+below (server's UTC clock vs. your local midnight) also applies to week/month range
+boundaries now — e.g. `startOfWeek`/`startOfMonth` compute against whatever anchor date
+they're given, so if that anchor itself was ever off by a day near midnight, the whole
+week/month range shifts with it. Same root fix as below (store user's IANA timezone)
+would resolve this for date navigation too, not just single meal timestamps.
+
 ## Shipped in 0.3
 
 - ~~Meals tab: show full meal details~~ → `/meals/[id]` detail page (photo, all

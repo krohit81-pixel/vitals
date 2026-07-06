@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, ImagePlus, PenLine, Mic, Barcode, Droplets, X, ArrowLeft, Check } from "lucide-react";
 import { logWaterAction } from "@/lib/nutrition/water-actions";
+import { localTodayString } from "@/lib/nutrition/date";
 
 const ACTIONS = [
   { icon: Camera, label: "Take Photo", enabled: true },
@@ -44,7 +45,7 @@ export function CaptureSheet({
 
   const addWater = (ml: number) => {
     startTransition(async () => {
-      await logWaterAction(ml);
+      await logWaterAction(ml, localTodayString());
       setSaved(true);
       setTimeout(handleClose, 700);
     });

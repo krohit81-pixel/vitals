@@ -4,14 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { recomputeDailyTotals } from "@/lib/nutrition/save-meal";
-
-function dateStringOf(iso: string): string {
-  const d = new Date(iso);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+import { toDateString } from "@/lib/nutrition/date";
 
 export async function deleteMealAction(mealId: string) {
   const supabase = await createClient();
@@ -50,7 +43,7 @@ export async function deleteMealAction(mealId: string) {
     await supabase.from("meal_images").delete().eq("id", meal.meal_image_id);
   }
 
-  await recomputeDailyTotals(supabase, user.id, dateStringOf(meal.logged_at));
+  await recomputeDailyTotals(supabase, user.id, toDateString(new Date(meal.logged_at)));
 
   revalidatePath("/meals");
   revalidatePath("/dashboard");
