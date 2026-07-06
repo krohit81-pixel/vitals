@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, Leaf } from "lucide-react";
+import { Plus } from "lucide-react";
 import { NAV_ITEMS } from "./nav-items";
+import { Logo } from "@/components/shared/logo";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({ onCapture }: { onCapture: () => void }) {
@@ -12,9 +13,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-black/[0.06] bg-white/60 px-4 py-6 backdrop-blur-lg dark:border-white/[0.06] dark:bg-graphite/60 md:flex">
       <div className="mb-8 flex items-center gap-2 px-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white">
-          <Leaf size={17} />
-        </div>
+        <Logo size="sm" />
         <span className="font-display text-lg font-semibold">Vitals</span>
       </div>
 

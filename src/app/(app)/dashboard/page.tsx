@@ -5,6 +5,7 @@ import { MacroCard } from "@/components/dashboard/macro-card";
 import { MealCard, type MealCardData } from "@/components/shared/meal-card";
 import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
 import { GreetingText } from "@/components/dashboard/greeting-text";
+import { Logo } from "@/components/shared/logo";
 import { DateNavigator } from "@/components/shared/date-navigator";
 import { PeriodSelector } from "@/components/dashboard/period-selector";
 import { MetricTrendCard } from "@/components/analytics/metric-trend-card";
@@ -48,13 +49,16 @@ export default async function DashboardPage({
   return (
     <div className="animate-fade-up space-y-5">
       <header className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-black/50 dark:text-white/50">
-            <GreetingText />
-          </p>
-          <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">
-            {firstName}
-          </h1>
+        <div className="flex items-center gap-3">
+          <Logo size="md" />
+          <div>
+            <p className="text-sm text-black/50 dark:text-white/50">
+              <GreetingText />
+            </p>
+            <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">
+              {firstName}
+            </h1>
+          </div>
         </div>
         <ProfileMenuButton />
       </header>

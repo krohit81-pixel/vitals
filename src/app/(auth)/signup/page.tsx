@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { Leaf } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/shared/logo";
 import { signUpAction, type AuthFormState } from "../actions";
 
 const initialState: AuthFormState = { error: null };
@@ -26,9 +26,7 @@ export default function SignupPage() {
     <div className="flex min-h-dvh items-center justify-center bg-cream px-6 dark:bg-graphite">
       <div className="w-full max-w-sm animate-fade-up">
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-glow">
-            <Leaf size={24} />
-          </div>
+          <Logo size="lg" />
           <h1 className="font-display text-2xl font-semibold">Create your account</h1>
           <p className="text-sm text-black/50 dark:text-white/50">Effortless food logging starts here.</p>
         </div>
