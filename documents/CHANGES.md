@@ -1,63 +1,51 @@
-# Changes — v0.3
-
-Everything below is in `vitals-0.3.zip`, paths mirror your repo — unzip over `src/` and
-copy `BACKLOG.md` to your repo root.
+# Changes — photo library upload fix + analyzing progress bar
 
 **Files to add (new):**
-- `BACKLOG.md` (updated — replace if you already have it)
-- `src/components/shared/local-time.tsx`
-- `src/components/meals/water-summary-card.tsx`
-- `src/app/(app)/meals/[id]/page.tsx`
-- `src/app/(app)/meals/[id]/actions.ts`
-- `src/app/(app)/meals/[id]/delete-meal-button.tsx`
+- `src/lib/nutrition/image-resize.ts`
+- `src/components/capture/analyzing-progress.tsx`
 
 **Files to replace (existing):**
-- `src/lib/nutrition/water-actions.ts`
-- `src/components/navigation/capture-sheet.tsx`
-- `src/components/shared/meal-card.tsx`
-- `src/app/(app)/dashboard/page.tsx`
-- `src/app/(app)/meals/page.tsx`
+- `src/components/capture/photo-capture.tsx`
+- `src/app/(app)/meals/new/new-meal-flow.tsx`
 
-No SQL changes this round.
+All in `vitals-photo-fix.zip`, paths mirror the repo. No SQL changes.
 
 ---
 
-## 1. Meal detail page (backlog item)
+## 1. Photo library upload failing ("peri peri rice" error)
 
-New route: `/meals/[id]`. Shows the photo (fetched via a signed URL — the storage bucket
-is private), every detected item, the full nutrient breakdown (calories, protein, carbs,
-fat, fibre, sugar, sodium), the AI's confidence and explanation, what you originally typed
-(for manual/voice entries), and a delete option (with confirm) that also correctly
-recomputes that day's totals afterward.
+**I can't see your server logs, so I can't confirm the exact error** — but this matches
+the same masked-error pattern as the Gemini model issue a few rounds back (Next.js hides
+the real message in production). Two things commonly cause exactly this when the photo
+comes from the **library** rather than a fresh camera capture, and I've fixed both at once
+rather than guessing which one it was:
 
-## 2. Dashboard/Meals → tap a meal → detail page (backlog item)
+1. **Size.** A photo you just took with "Take Photo" is one shot; your photo library can
+   contain full-resolution originals — often 5-15MB. Base64-encoding for the Server Action
+   adds ~33% on top of that, which can exceed request-size limits.
+2. **Format.** iPhones default to HEIC for library photos. That was being passed straight
+   through as the file's real MIME type to Gemini — HEIC handling isn't as universally
+   solid as JPEG across every part of that pipeline.
 
-`MealCard` now accepts an `href` — both the Dashboard's "Today's Meals" and the Meals
-tab's cards link straight to `/meals/[id]`.
+**Fix:** `image-resize.ts` — before anything gets sent anywhere, the photo is drawn onto
+an in-browser canvas, downscaled to a max 1280px edge, and re-encoded as JPEG at 85%
+quality. This makes every photo small and in a known-good format regardless of source —
+camera or library, HEIC or not. `photo-capture.tsx` now calls this and shows a brief
+"Processing photo…" state while it happens (it's fast, but real-resolution photos aren't
+instant to redraw).
 
-## 3. Timezone bug — meal times showing wrong
+If you hit this again on a *specific* photo after this fix, that'd be a genuinely new
+issue rather than this same one — worth flagging separately if so.
 
-**Root cause:** meal lists are Server Components. `toLocaleTimeString()` running there
-uses the *server's* timezone (Vercel functions run in UTC), not yours — so every time was
-off by however many hours you are from UTC.
+## 2. Analyzing progress indicator
 
-**Fix:** new `<LocalTime iso={...} />` component, marked `"use client"`, so the actual
-formatting happens in your browser instead of the server. It renders blank for an instant
-on load, then fills in — that's intentional (avoids a React hydration warning), not a bug.
-
-**One related thing I did *not* fix, flagged in BACKLOG.md:** "today" itself (which meals
-count as today's) is still computed using the server's UTC clock, not yours. In practice
-this only matters if you log a meal between midnight and ~5:30am your time — edge case,
-but noting it so it's not a surprise later. Real fix needs your timezone stored
-server-side (e.g. captured at signup), which felt like its own small piece of work rather
-than something to fold in silently here.
-
-## 4. Water section on the Meals tab
-
-Meals tab now groups entries into Breakfast / Lunch / Dinner / Snack sections (only
-shows sections that have something logged), plus a **Water** card above them — separate
-from the meal groups, always visible, showing today's total against your target with a
-quick "+250ml" button right there (no need to open the `+` sheet for a fast top-up).
+New `AnalyzingProgress` component — animated ring that eases up toward ~92% while
+waiting, with status text that cycles ("Uploading photo…" → "Identifying foods…" →
+"Estimating nutrition…" → "Double-checking portions…", worded differently for manual/voice
+entry vs. photo). It deliberately never claims 100% on its own — there's no real
+progress signal from a single AI call, so it stops short and only actually completes once
+the real result comes back and the screen moves on to Review. Replaces the old static
+skeleton + "Analyzing your meal…" text.
 
 ---
 

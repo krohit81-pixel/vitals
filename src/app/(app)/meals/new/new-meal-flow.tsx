@@ -7,6 +7,7 @@ import { PhotoCapture } from "@/components/capture/photo-capture";
 import { ManualEntry } from "@/components/capture/manual-entry";
 import { VoiceCapture } from "@/components/capture/voice-capture";
 import { MealReview } from "@/components/capture/meal-review";
+import { AnalyzingProgress } from "@/components/capture/analyzing-progress";
 import { inferMealType, type MealType } from "@/lib/nutrition/meal-type";
 import type { MealAnalysis } from "@/lib/ai/types";
 import {
@@ -110,7 +111,15 @@ export function NewMealFlow() {
         </h1>
       </div>
 
-      {status === "analyzing" && <AnalyzingSkeleton />}
+      {status === "analyzing" && (
+        <AnalyzingProgress
+          stages={
+            mode === "photo" || mode === "upload"
+              ? ["Uploading photo…", "Identifying foods…", "Estimating nutrition…", "Double-checking portions…"]
+              : ["Reading your entry…", "Matching foods…", "Estimating nutrition…", "Finishing up…"]
+          }
+        />
+      )}
 
       {status === "error" && (
         <div className="glass-card space-y-3 p-5 text-center">
@@ -149,19 +158,6 @@ export function NewMealFlow() {
           saving={status === "saving"}
         />
       )}
-    </div>
-  );
-}
-
-function AnalyzingSkeleton() {
-  return (
-    <div className="space-y-3 py-6">
-      <div className="skeleton h-24 w-full" />
-      <div className="skeleton h-12 w-full" />
-      <div className="skeleton h-12 w-3/4" />
-      <p className="pt-2 text-center text-sm text-black/50 dark:text-white/50">
-        Analyzing your meal…
-      </p>
     </div>
   );
 }

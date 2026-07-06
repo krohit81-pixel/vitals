@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { Camera, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { resizeImageFile } from "@/lib/nutrition/image-resize";
 
 export function PhotoCapture({
   useCameraCapture,
@@ -17,16 +18,33 @@ export function PhotoCapture({
   const [preview, setPreview] = useState<{ url: string; base64: string; mimeType: string } | null>(
     null
   );
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const base64 = dataUrl.split(",")[1] ?? "";
-      setPreview({ url: dataUrl, base64, mimeType: file.type });
-    };
-    reader.readAsDataURL(file);
+  const handleFile = async (file: File) => {
+    setError(null);
+    setProcessing(true);
+    try {
+      // Resize + re-encode to JPEG here — handles both oversized photo-library
+      // images and HEIC (iPhone's default format), which the AI vision call
+      // shouldn't have to deal with directly.
+      const { base64, mimeType, dataUrl } = await resizeImageFile(file);
+      setPreview({ url: dataUrl, base64, mimeType });
+    } catch {
+      setError("Couldn't process that photo — try a different one.");
+    } finally {
+      setProcessing(false);
+    }
   };
+
+  if (processing) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-14">
+        <div className="skeleton h-32 w-32 rounded-2xl" />
+        <p className="text-sm text-black/50 dark:text-white/50">Processing photo…</p>
+      </div>
+    );
+  }
 
   if (!preview) {
     return (
@@ -40,6 +58,7 @@ export function PhotoCapture({
             {useCameraCapture ? "Open camera" : "Choose photo"}
           </span>
         </button>
+        {error && <p className="text-sm text-red-500">{error}</p>}
         <input
           ref={inputRef}
           type="file"
@@ -48,7 +67,7 @@ export function PhotoCapture({
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) handleFile(file);
+            if (file) void handleFile(file);
           }}
         />
       </div>
