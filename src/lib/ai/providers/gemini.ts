@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis } from "../types";
-import { buildCoachPrompt, buildImageAnalysisPrompt, buildTextAnalysisPrompt } from "../prompts";
+import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt } from "../prompts";
 import { extractJson, toMealAnalysis } from "../json";
 
 const MODEL = "gemini-2.0-flash"; // fast + multimodal; swap via env if needed later
@@ -27,6 +27,21 @@ export class GeminiProvider implements AIProvider {
   async analyzeMealText(description: string): Promise<MealAnalysis> {
     const model = getClient().getGenerativeModel({ model: MODEL });
     const result = await model.generateContent(buildTextAnalysisPrompt(description));
+    const parsed = extractJson(result.response.text()) as Parameters<typeof toMealAnalysis>[0];
+    return toMealAnalysis(parsed);
+  }
+
+  async refineMealAnalysis(
+    previous: MealAnalysis,
+    answers: Array<{ question: string; answer: "yes" | "no" }>
+  ): Promise<MealAnalysis> {
+    const model = getClient().getGenerativeModel({ model: MODEL });
+    const prompt = buildRefinementPrompt(
+      previous.explanation,
+      previous.items.map((i) => ({ name: i.name, estimatedQuantity: i.estimatedQuantity })),
+      answers
+    );
+    const result = await model.generateContent(prompt);
     const parsed = extractJson(result.response.text()) as Parameters<typeof toMealAnalysis>[0];
     return toMealAnalysis(parsed);
   }

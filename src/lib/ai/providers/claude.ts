@@ -1,5 +1,5 @@
 import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis } from "../types";
-import { buildCoachPrompt, buildImageAnalysisPrompt, buildTextAnalysisPrompt } from "../prompts";
+import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt } from "../prompts";
 import { extractJson, toMealAnalysis } from "../json";
 
 const MODEL = "claude-sonnet-4-6";
@@ -38,6 +38,19 @@ export class ClaudeProvider implements AIProvider {
 
   async analyzeMealText(description: string): Promise<MealAnalysis> {
     const text = await messages(buildTextAnalysisPrompt(description));
+    return toMealAnalysis(extractJson(text) as Parameters<typeof toMealAnalysis>[0]);
+  }
+
+  async refineMealAnalysis(
+    previous: MealAnalysis,
+    answers: Array<{ question: string; answer: "yes" | "no" }>
+  ): Promise<MealAnalysis> {
+    const prompt = buildRefinementPrompt(
+      previous.explanation,
+      previous.items.map((i) => ({ name: i.name, estimatedQuantity: i.estimatedQuantity })),
+      answers
+    );
+    const text = await messages(prompt);
     return toMealAnalysis(extractJson(text) as Parameters<typeof toMealAnalysis>[0]);
   }
 

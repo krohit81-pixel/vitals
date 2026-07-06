@@ -38,10 +38,12 @@ export async function signUpAction(
 
   if (error) return { error: error.message };
 
-  // Create the corresponding row in public.users (id mirrors auth.users.id).
+  // Create the corresponding row in public.users (id mirrors auth.users.id),
+  // plus a default goals row so daily targets exist from day one.
   if (data.user) {
     const userId: string = data.user.id;
     await supabase.from("users").insert({ id: userId, full_name: fullName });
+    await supabase.from("goals").insert({ user_id: userId });
   }
 
   redirect("/dashboard");

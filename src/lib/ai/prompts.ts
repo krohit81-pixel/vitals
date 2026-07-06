@@ -47,6 +47,28 @@ Rules:
 ${MEAL_ANALYSIS_JSON_SHAPE}`;
 }
 
+export function buildRefinementPrompt(
+  previousExplanation: string,
+  items: Array<{ name: string; estimatedQuantity: string }>,
+  answers: Array<{ question: string; answer: "yes" | "no" }>
+) {
+  return `You previously estimated a meal as: ${previousExplanation}
+
+Detected items: ${items.map((i) => `${i.name} (${i.estimatedQuantity})`).join(", ")}
+
+The user answered your clarifying questions:
+${answers.map((a) => `- "${a.question}" → ${a.answer}`).join("\n")}
+
+Revise your nutrition estimate to account for these answers (e.g. adjust calories/fat if the user
+confirmed something was fried instead of grilled, or full-fat instead of skim, etc). Your confidence
+should now be higher since the user has confirmed key details — do not include further clarifying
+questions unless something is still genuinely ambiguous.
+
+Respond with ONLY valid JSON matching exactly this shape, no markdown fences:
+
+${MEAL_ANALYSIS_JSON_SHAPE}`;
+}
+
 export function buildCoachPrompt(context: {
   period: "daily" | "weekly";
   goals: Record<string, number>;

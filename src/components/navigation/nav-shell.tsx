@@ -12,10 +12,14 @@ export function NavShell({ children }: { children: React.ReactNode }) {
 
   const handleSelect = (label: string) => {
     setCaptureOpen(false);
-    // Milestone 2 wires these to the real capture flows (vision pipeline, manual
-    // NL parsing, voice transcription). For now, route to the meals tab.
-    router.push("/meals");
-    console.info(`[capture] selected: ${label}`);
+    const modeByLabel: Record<string, string> = {
+      "Take Photo": "photo",
+      "Upload Photo": "upload",
+      "Manual Entry": "manual",
+      "Voice Entry": "voice",
+    };
+    const mode = modeByLabel[label];
+    if (mode) router.push(`/meals/new?mode=${mode}`);
   };
 
   return (

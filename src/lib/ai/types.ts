@@ -43,6 +43,12 @@ export interface AIProvider {
   /** Parse free-text meal descriptions ("2 eggs and toast") into structured nutrition. */
   analyzeMealText(description: string): Promise<MealAnalysis>;
 
+  /** Re-run estimation after the user answers low-confidence clarifying questions. */
+  refineMealAnalysis(
+    previous: MealAnalysis,
+    answers: Array<{ question: string; answer: "yes" | "no" }>
+  ): Promise<MealAnalysis>;
+
   /** Generate supportive, evidence-based coaching feedback from a summary of recent intake. */
   generateCoachFeedback(context: CoachPromptContext): Promise<CoachFeedback>;
 }
