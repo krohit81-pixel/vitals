@@ -14,3 +14,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/coach", label: "AI Coach", icon: Sparkles },
   { href: "/profile", label: "Profile", icon: User },
 ];
+
+// Bottom nav shows 4 tabs (2 either side of the floating capture button).
+// Profile moves to the top-of-screen menu button on mobile instead — see
+// ProfileMenuButton — and stays in the sidebar's full list on desktop.
+export const TAB_ITEMS: NavItem[] = NAV_ITEMS.filter((item) => item.href !== "/profile");

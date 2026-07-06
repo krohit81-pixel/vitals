@@ -30,7 +30,7 @@ export async function signUpAction(
   const fullName = String(formData.get("fullName") ?? "");
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: fullName } },
@@ -38,13 +38,9 @@ export async function signUpAction(
 
   if (error) return { error: error.message };
 
-  // Create the corresponding row in public.users (id mirrors auth.users.id),
-  // plus a default goals row so daily targets exist from day one.
-  if (data.user) {
-    const userId: string = data.user.id;
-    await supabase.from("users").insert({ id: userId, full_name: fullName });
-    await supabase.from("goals").insert({ user_id: userId });
-  }
-
+  // public.users and public.goals are created automatically by the
+  // handle_new_user() trigger (see supabase/schema.sql) — no client-side
+  // insert needed, which avoids an RLS race if email confirmation is on
+  // (no session exists yet at this point in that flow).
   redirect("/dashboard");
 }

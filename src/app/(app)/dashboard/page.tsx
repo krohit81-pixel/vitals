@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CalorieRing } from "@/components/dashboard/calorie-ring";
 import { MacroCard } from "@/components/dashboard/macro-card";
 import { MealCard, type MealCardData } from "@/components/shared/meal-card";
+import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
+import { formatFriendlyDate } from "@/lib/nutrition/date";
 
 function todayDateString() {
   const d = new Date();
@@ -64,11 +66,15 @@ export default async function DashboardPage() {
 
   return (
     <div className="animate-fade-up space-y-6">
-      <header>
-        <p className="text-sm text-black/50 dark:text-white/50">Good morning,</p>
-        <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">
-          {firstName}
-        </h1>
+      <header className="flex items-start justify-between">
+        <div>
+          <p className="text-sm text-black/50 dark:text-white/50">Good morning,</p>
+          <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">
+            {firstName}
+          </h1>
+          <p className="mt-1 text-xs text-black/40 dark:text-white/40">{formatFriendlyDate()}</p>
+        </div>
+        <ProfileMenuButton />
       </header>
 
       <section className="glass-card flex flex-col items-center">

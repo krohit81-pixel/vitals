@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,10 +29,14 @@ export default async function ProfilePage() {
         <CardHeader>
           <CardTitle>Daily goals</CardTitle>
         </CardHeader>
-        <p className="text-sm text-black/50 dark:text-white/50">
-          Calorie, protein, carb, fat, fibre, and water targets — editable form lands in Milestone 3,
-          backed by the <code className="rounded bg-black/5 px-1 dark:bg-white/10">goals</code> table.
+        <p className="mb-3 text-sm text-black/50 dark:text-white/50">
+          Calories, protein, carbs, fat, fibre, and water — set your own targets for now.
         </p>
+        <Link href="/profile/goals">
+          <Button variant="outline" className="w-full">
+            Edit goals
+          </Button>
+        </Link>
       </Card>
 
       <Card>

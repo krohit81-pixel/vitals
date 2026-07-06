@@ -4,15 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
-import { NAV_ITEMS } from "./nav-items";
+import { TAB_ITEMS } from "./nav-items";
 import { cn } from "@/lib/utils";
 
 export function BottomNav({ onCapture }: { onCapture: () => void }) {
   const pathname = usePathname();
-  const left = NAV_ITEMS.slice(0, 2);
-  const right = NAV_ITEMS.slice(2);
+  const left = TAB_ITEMS.slice(0, 2);
+  const right = TAB_ITEMS.slice(2);
 
-  const renderItem = (item: (typeof NAV_ITEMS)[number]) => {
+  const renderItem = (item: (typeof TAB_ITEMS)[number]) => {
     const active = pathname.startsWith(item.href);
     const Icon = item.icon;
     return (
