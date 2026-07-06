@@ -56,7 +56,7 @@ export default async function DashboardPage() {
       id: m.id,
       type: (m.meal_type.charAt(0).toUpperCase() + m.meal_type.slice(1)) as MealCardData["type"],
       name: items.length > 0 ? items.map((i) => i.name).join(", ") : "Meal",
-      time: new Date(m.logged_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      loggedAtIso: m.logged_at,
       calories: Math.round(Number(m.calories)),
       proteinG: Math.round(Number(m.protein_g)),
       carbsG: Math.round(Number(m.carbs_g)),
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="space-y-2.5">
             {mealCards.map((meal) => (
-              <MealCard key={meal.id} meal={meal} />
+              <MealCard key={meal.id} meal={meal} href={`/meals/${meal.id}`} />
             ))}
           </div>
         )}

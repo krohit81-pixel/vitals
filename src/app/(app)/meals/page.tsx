@@ -3,9 +3,20 @@ import { UtensilsCrossed, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { MealCard, type MealCardData } from "@/components/shared/meal-card";
-import { type MealType } from "@/lib/nutrition/meal-type";
+import { WaterSummaryCard } from "@/components/meals/water-summary-card";
+import { MEAL_TYPE_LABELS, type MealType } from "@/lib/nutrition/meal-type";
 import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
 import { formatFriendlyDate } from "@/lib/nutrition/date";
+
+const SECTION_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+
+function todayDateString() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 function startOfTodayISO() {
   const d = new Date();
@@ -19,28 +30,41 @@ export default async function MealsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: meals } = await supabase
-    .from("meal_logs")
-    .select("id, meal_type, calories, protein_g, carbs_g, fat_g, logged_at, detected_items")
-    .eq("user_id", user!.id)
-    .gte("logged_at", startOfTodayISO())
-    .order("logged_at", { ascending: false });
+  const [{ data: meals }, { data: totals }, { data: goals }] = await Promise.all([
+    supabase
+      .from("meal_logs")
+      .select("id, meal_type, calories, protein_g, carbs_g, fat_g, logged_at, detected_items")
+      .eq("user_id", user!.id)
+      .gte("logged_at", startOfTodayISO())
+      .order("logged_at", { ascending: false }),
+    supabase
+      .from("daily_totals")
+      .select("water_ml")
+      .eq("user_id", user!.id)
+      .eq("date", todayDateString())
+      .single(),
+    supabase.from("goals").select("water_target_ml").eq("user_id", user!.id).single(),
+  ]);
 
   const cards: MealCardData[] = (meals ?? []).map((m) => {
     const items = (m.detected_items ?? []) as Array<{ name: string }>;
-    const name = items.length > 0 ? items.map((i) => i.name).join(", ") : "Meal";
-
     return {
       id: m.id,
       type: (m.meal_type.charAt(0).toUpperCase() + m.meal_type.slice(1)) as MealCardData["type"],
-      name,
-      time: new Date(m.logged_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      name: items.length > 0 ? items.map((i) => i.name).join(", ") : "Meal",
+      loggedAtIso: m.logged_at,
       calories: Math.round(Number(m.calories)),
       proteinG: Math.round(Number(m.protein_g)),
       carbsG: Math.round(Number(m.carbs_g)),
       fatG: Math.round(Number(m.fat_g)),
     };
   });
+
+  const sections = SECTION_ORDER.map((type) => ({
+    type,
+    label: MEAL_TYPE_LABELS[type],
+    meals: cards.filter((c) => c.type.toLowerCase() === type),
+  })).filter((section) => section.meals.length > 0);
 
   return (
     <div className="animate-fade-up space-y-6">
@@ -60,18 +84,29 @@ export default async function MealsPage() {
         </div>
       </div>
 
-      {cards.length === 0 ? (
+      {/* Water gets its own section, separate from the meal-type groups below */}
+      <WaterSummaryCard
+        initialMl={Math.round(Number(totals?.water_ml ?? 0))}
+        targetMl={goals?.water_target_ml ?? 2500}
+      />
+
+      {sections.length === 0 ? (
         <EmptyState
           icon={UtensilsCrossed}
           title="No meals logged yet today"
           description="Tap the + button to log your first meal — by photo, voice, or just typing what you ate."
         />
       ) : (
-        <div className="space-y-2.5">
-          {cards.map((meal) => (
-            <MealCard key={meal.id} meal={meal} />
-          ))}
-        </div>
+        sections.map((section) => (
+          <div key={section.type} className="space-y-2.5">
+            <h2 className="font-display text-sm font-medium text-black/50 dark:text-white/50">
+              {section.label}
+            </h2>
+            {section.meals.map((meal) => (
+              <MealCard key={meal.id} meal={meal} href={`/meals/${meal.id}`} />
+            ))}
+          </div>
+        ))
       )}
     </div>
   );
