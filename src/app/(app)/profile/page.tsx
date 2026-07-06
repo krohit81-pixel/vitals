@@ -41,6 +41,20 @@ export default async function ProfilePage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Apple Health</CardTitle>
+        </CardHeader>
+        <p className="mb-3 text-sm text-black/50 dark:text-white/50">
+          Sync workouts from your Apple Watch via a Shortcuts automation.
+        </p>
+        <Link href="/profile/health">
+          <Button variant="outline" className="w-full">
+            Manage Apple Health
+          </Button>
+        </Link>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Personal details</CardTitle>
         </CardHeader>
         <p className="text-sm text-black/50 dark:text-white/50">

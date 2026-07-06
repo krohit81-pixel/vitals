@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, ImagePlus, PenLine, Mic, Barcode, Droplets, X, ArrowLeft, Check } from "lucide-react";
+import { Camera, ImagePlus, PenLine, Mic, Barcode, Droplets, Dumbbell, X, ArrowLeft, Check } from "lucide-react";
 import { logWaterAction } from "@/lib/nutrition/water-actions";
 import { localTodayString } from "@/lib/nutrition/date";
 
@@ -12,6 +12,7 @@ const ACTIONS = [
   { icon: PenLine, label: "Manual Entry", enabled: true },
   { icon: Mic, label: "Voice Entry", enabled: true },
   { icon: Droplets, label: "Add Water", enabled: true },
+  { icon: Dumbbell, label: "Log Workout", enabled: true },
   { icon: Barcode, label: "Barcode Scan", enabled: false },
 ] as const;
 

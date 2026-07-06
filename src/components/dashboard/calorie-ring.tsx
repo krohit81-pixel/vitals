@@ -5,12 +5,18 @@ import { motion } from "framer-motion";
 export function CalorieRing({
   consumed,
   target,
+  burned = 0,
 }: {
   consumed: number;
   target: number;
+  /** Exercise calories burned — added to target per the energy balance formula:
+   *  Remaining = Target + Burned − Consumed. Defaults to 0 so this stays a
+   *  drop-in replacement wherever burned isn't tracked (e.g. no workouts yet). */
+  burned?: number;
 }) {
-  const remaining = Math.max(target - consumed, 0);
-  const pct = Math.min(consumed / target, 1);
+  const adjustedTarget = target + burned;
+  const remaining = Math.max(adjustedTarget - consumed, 0);
+  const pct = Math.min(consumed / adjustedTarget, 1);
 
   const size = 220;
   const stroke = 16;
@@ -19,11 +25,8 @@ export function CalorieRing({
 
   return (
     <div className="flex flex-col items-center py-4">
-      {/* This wrapper is sized exactly to the ring and holds nothing else, so the
-          absolutely-positioned text is centered on the ring itself — not on the
-          ring-plus-stats-row below it, which was the bug: with the stats row as a
-          flex sibling in the same container, the browser centered the overlay
-          relative to their *combined* height, pulling the text downward. */}
+      {/* Sized exactly to the ring, holding only the SVG + overlay — keeps the
+          text centered on the ring regardless of what renders below it. */}
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
           <circle
@@ -57,7 +60,8 @@ export function CalorieRing({
 
       <div className="mt-5 flex w-full justify-between px-2 text-center">
         <Stat label="Consumed" value={consumed} />
-        <Stat label="Target" value={target} />
+        <Stat label="Burned" value={burned} />
+        <Stat label="Remaining" value={remaining} />
       </div>
     </div>
   );

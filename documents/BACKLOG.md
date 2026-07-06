@@ -3,6 +3,30 @@
 Items mentioned as "later"/"future" during development, kept here so they don't get lost.
 Not yet built. Move items into an actual milestone/version when ready to build.
 
+## Shipped in Milestone 4
+
+- Manual workout logging — full CRUD (`/workouts/new`, `/workouts/[id]`), 12 workout
+  types, edit/delete for manually-entered workouts.
+- Energy balance on Dashboard: `Remaining = Target + Burned − Consumed`, `CalorieRing`
+  now shows Consumed/Burned/Remaining (was Consumed/Target).
+- Unified daily timeline — Meals tab now interleaves meals and workouts chronologically
+  by time, instead of grouping meals by type.
+- Exercise analytics — Net Calories, Consumed vs Burned comparison, Workout Duration,
+  Workout Frequency, all in Week/Month trend views, using the same reusable chart
+  components from Milestone 3.
+- Apple Health — **see the important caveat below**, this is not literal HealthKit SDK
+  access (impossible from a web app), it's a personal-sync-token + iOS Shortcuts bridge.
+
+**Important, not a limitation so much as a hard platform fact:** Apple HealthKit is a
+native-only iOS framework with zero web/PWA access — no browser, on any platform, can
+read it directly. "Apple Health integration" in Vitals works via a personal sync token
++ an iOS Shortcuts automation (using Apple's own documented Workout trigger) that POSTs
+workout data to `/api/health/sync`. This is real and functional today, but it is a
+different thing from what "Connect Apple Health" implies in most apps (an in-app OAuth-
+style permission prompt) — that would require a native iOS companion app with HealthKit
+entitlements, a genuinely separate engineering project (Swift/Xcode, App Store
+submission, Apple's HealthKit review process).
+
 ## Shipped in Milestone 3
 
 - ~~Date navigation on Dashboard and Meals~~ → prev/next arrows + calendar-picker

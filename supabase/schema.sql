@@ -111,6 +111,41 @@ create table if not exists public.settings (
   updated_at timestamptz default now()
 );
 
+-- Apple Health sync bridge (see workout_logs below) — added via ALTER since
+-- CREATE TABLE IF NOT EXISTS is a no-op on a database that already has this table.
+alter table public.settings add column if not exists health_connected boolean default false;
+alter table public.settings add column if not exists health_sync_token_hash text;
+alter table public.settings add column if not exists health_last_sync_at timestamptz;
+
+create table if not exists public.workout_logs (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  workout_type text check (workout_type in (
+    'walking','running','elliptical','cycling','swimming','strength_training',
+    'hiit','yoga','rowing','hiking','sports','other'
+  )) not null,
+  date date not null,
+  start_time time not null default '00:00',
+  duration_minutes int not null default 0,
+  calories_burned numeric not null default 0,
+  source text check (source in ('manual','apple_health')) not null default 'manual',
+  health_workout_id text, -- HealthKit's workout UUID, for dedup on re-sync
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Prevents the same Apple Health workout being imported twice on repeat syncs.
+-- No WHERE clause needed: Postgres already treats NULL health_workout_id values
+-- (i.e. every manual entry) as distinct from each other in a unique constraint,
+-- so manual workouts are never blocked by this. Using a plain constraint (not a
+-- partial index) also matters for ON CONFLICT (user_id, health_workout_id) in
+-- the sync route to actually match it — a partial index can't be inferred by a
+-- plain ON CONFLICT target.
+alter table public.workout_logs drop constraint if exists workout_logs_health_dedup;
+alter table public.workout_logs add constraint workout_logs_health_dedup
+  unique (user_id, health_workout_id);
+
 -- Row Level Security: every user can only touch their own rows
 alter table public.users enable row level security;
 alter table public.goals enable row level security;
@@ -120,6 +155,7 @@ alter table public.daily_totals enable row level security;
 alter table public.weight_logs enable row level security;
 alter table public.ai_feedback enable row level security;
 alter table public.settings enable row level security;
+alter table public.workout_logs enable row level security;
 
 do $$
 declare
@@ -127,7 +163,7 @@ declare
 begin
   for t in select unnest(array[
     'users','goals','meal_images','meal_logs',
-    'daily_totals','weight_logs','ai_feedback','settings'
+    'daily_totals','weight_logs','ai_feedback','settings','workout_logs'
   ])
   loop
     execute format($f$

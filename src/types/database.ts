@@ -137,9 +137,38 @@ export interface Database {
           dark_mode: boolean;
           notifications: Record<string, boolean>;
           updated_at: string;
+          health_connected: boolean;
+          health_sync_token_hash: string | null;
+          health_last_sync_at: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["settings"]["Row"]> & { user_id: string };
         Update: Partial<Database["public"]["Tables"]["settings"]["Row"]>;
+      Relationships: never[];
+      };
+      workout_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          workout_type:
+            | "walking" | "running" | "elliptical" | "cycling" | "swimming"
+            | "strength_training" | "hiit" | "yoga" | "rowing" | "hiking"
+            | "sports" | "other";
+          date: string;
+          start_time: string;
+          duration_minutes: number;
+          calories_burned: number;
+          source: "manual" | "apple_health";
+          health_workout_id: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["workout_logs"]["Row"]> & {
+          user_id: string;
+          workout_type: Database["public"]["Tables"]["workout_logs"]["Row"]["workout_type"];
+          date: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["workout_logs"]["Row"]>;
       Relationships: never[];
       };
     };

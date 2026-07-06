@@ -12,6 +12,12 @@ export function NavShell({ children }: { children: React.ReactNode }) {
 
   const handleSelect = (label: string) => {
     setCaptureOpen(false);
+
+    if (label === "Log Workout") {
+      router.push("/workouts/new");
+      return;
+    }
+
     const modeByLabel: Record<string, string> = {
       "Take Photo": "photo",
       "Upload Photo": "upload",

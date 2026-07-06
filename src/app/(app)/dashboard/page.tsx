@@ -3,14 +3,18 @@ import { createClient } from "@/lib/supabase/server";
 import { CalorieRing } from "@/components/dashboard/calorie-ring";
 import { MacroCard } from "@/components/dashboard/macro-card";
 import { MealCard, type MealCardData } from "@/components/shared/meal-card";
+import { WorkoutCard, type WorkoutCardData } from "@/components/shared/workout-card";
 import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
 import { GreetingText } from "@/components/dashboard/greeting-text";
 import { Logo } from "@/components/shared/logo";
 import { DateNavigator } from "@/components/shared/date-navigator";
 import { PeriodSelector } from "@/components/dashboard/period-selector";
 import { MetricTrendCard } from "@/components/analytics/metric-trend-card";
+import { ComparisonTrendCard } from "@/components/analytics/comparison-trend-card";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
+import { getWorkoutCaloriesForDate, getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
 import { type ViewMode, periodBounds } from "@/lib/nutrition/date";
+import type { WorkoutType } from "@/lib/nutrition/workout-type";
 
 export default async function DashboardPage({
   searchParams,
@@ -30,10 +34,11 @@ export default async function DashboardPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { data: goals }, rangeTotals] = await Promise.all([
+  const [{ data: profile }, { data: goals }, rangeTotals, workoutRangeTotals] = await Promise.all([
     supabase.from("users").select("full_name").eq("id", user!.id).single(),
     supabase.from("goals").select("*").eq("user_id", user!.id).single(),
     getDailyTotalsRange(supabase, user!.id, rangeStart, rangeEnd),
+    getWorkoutTotalsRange(supabase, user!.id, rangeStart, rangeEnd),
   ]);
 
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
@@ -74,7 +79,7 @@ export default async function DashboardPage({
           date={anchor}
         />
       ) : (
-        <TrendsView totals={rangeTotals} goals={g} />
+        <TrendsView totals={rangeTotals} workoutTotals={workoutRangeTotals} goals={g} />
       )}
     </div>
   );
@@ -99,15 +104,22 @@ async function DayView({
   date: string;
 }) {
   const supabase = await createClient();
-  const { data: meals } = await supabase
-    .from("meal_logs")
-    .select("id, meal_type, calories, protein_g, carbs_g, fat_g, logged_at, detected_items")
-    .eq("user_id", supabaseUserId)
-    .gte("logged_at", `${date}T00:00:00`)
-    .lte("logged_at", `${date}T23:59:59`)
-    .order("logged_at", { ascending: false });
+  const [{ data: meals }, { data: workouts }, burned] = await Promise.all([
+    supabase
+      .from("meal_logs")
+      .select("id, meal_type, calories, protein_g, carbs_g, fat_g, logged_at, detected_items")
+      .eq("user_id", supabaseUserId)
+      .gte("logged_at", `${date}T00:00:00`)
+      .lte("logged_at", `${date}T23:59:59`),
+    supabase
+      .from("workout_logs")
+      .select("id, workout_type, start_time, duration_minutes, calories_burned, source")
+      .eq("user_id", supabaseUserId)
+      .eq("date", date),
+    getWorkoutCaloriesForDate(supabase, supabaseUserId, date),
+  ]);
 
-  const mealCards: MealCardData[] = (meals ?? []).map((m) => {
+  const mealCards: (MealCardData & { kind: "meal"; sortIso: string })[] = (meals ?? []).map((m) => {
     const items = (m.detected_items ?? []) as Array<{ name: string }>;
     return {
       id: m.id,
@@ -118,8 +130,24 @@ async function DayView({
       proteinG: Math.round(Number(m.protein_g)),
       carbsG: Math.round(Number(m.carbs_g)),
       fatG: Math.round(Number(m.fat_g)),
+      kind: "meal" as const,
+      sortIso: m.logged_at,
     };
   });
+
+  const workoutCards: (WorkoutCardData & { kind: "workout"; sortIso: string })[] = (workouts ?? []).map((w) => ({
+    id: w.id,
+    workoutType: w.workout_type as WorkoutType,
+    startIso: `${date}T${w.start_time}`,
+    durationMinutes: w.duration_minutes,
+    caloriesBurned: Number(w.calories_burned),
+    source: w.source as "manual" | "apple_health",
+    kind: "workout" as const,
+    sortIso: `${date}T${w.start_time}`,
+  }));
+
+  // Unified chronological timeline — meals and workouts interleaved by time.
+  const timeline = [...mealCards, ...workoutCards].sort((a, b) => a.sortIso.localeCompare(b.sortIso));
 
   return (
     <div className="space-y-6">
@@ -127,7 +155,7 @@ async function DayView({
         <span className="mb-1 text-sm font-medium text-black/60 dark:text-white/60">
           Summary
         </span>
-        <CalorieRing consumed={Math.round(totals.calories)} target={goals.calorie_target} />
+        <CalorieRing consumed={Math.round(totals.calories)} target={goals.calorie_target} burned={Math.round(burned)} />
       </section>
 
       <section className="grid grid-cols-2 gap-3">
@@ -140,17 +168,21 @@ async function DayView({
 
       <section>
         <h2 className="mb-3 font-display text-base font-medium text-ink dark:text-cream-100">
-          Meals
+          Timeline
         </h2>
-        {mealCards.length === 0 ? (
+        {timeline.length === 0 ? (
           <p className="glass-card py-8 text-center text-sm text-black/50 dark:text-white/50">
             Nothing logged this day.
           </p>
         ) : (
           <div className="space-y-2.5">
-            {mealCards.map((meal) => (
-              <MealCard key={meal.id} meal={meal} href={`/meals/${meal.id}`} />
-            ))}
+            {timeline.map((entry) =>
+              entry.kind === "meal" ? (
+                <MealCard key={`meal-${entry.id}`} meal={entry} href={`/meals/${entry.id}`} />
+              ) : (
+                <WorkoutCard key={`workout-${entry.id}`} workout={entry} href={`/workouts/${entry.id}`} />
+              )
+            )}
           </div>
         )}
       </section>
@@ -160,9 +192,11 @@ async function DayView({
 
 function TrendsView({
   totals,
+  workoutTotals,
   goals,
 }: {
   totals: Array<{ date: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; fibre_g: number; water_ml: number }>;
+  workoutTotals: Array<{ date: string; caloriesBurned: number; workoutCount: number; durationMinutes: number }>;
   goals: {
     calorie_target: number;
     protein_target_g: number;
@@ -172,50 +206,95 @@ function TrendsView({
     water_target_ml: number;
   };
 }) {
+  const burnedByDate = new Map(workoutTotals.map((w) => [w.date, w.caloriesBurned]));
+
   return (
-    <div className="space-y-3">
-      <MetricTrendCard
-        label="Calories"
-        unit="kcal"
-        color="#10B981"
-        target={goals.calorie_target}
-        data={totals.map((t) => ({ date: t.date, value: t.calories }))}
-      />
-      <MetricTrendCard
-        label="Protein"
-        unit="g"
-        color="#10B981"
-        target={goals.protein_target_g}
-        data={totals.map((t) => ({ date: t.date, value: t.protein_g }))}
-      />
-      <MetricTrendCard
-        label="Carbs"
-        unit="g"
-        color="#3B82F6"
-        target={goals.carb_target_g}
-        data={totals.map((t) => ({ date: t.date, value: t.carbs_g }))}
-      />
-      <MetricTrendCard
-        label="Fat"
-        unit="g"
-        color="#F59E0B"
-        target={goals.fat_target_g}
-        data={totals.map((t) => ({ date: t.date, value: t.fat_g }))}
-      />
-      <MetricTrendCard
-        label="Fibre"
-        unit="g"
-        color="#10B981"
-        target={goals.fibre_target_g}
-        data={totals.map((t) => ({ date: t.date, value: t.fibre_g }))}
-      />
-      <MetricTrendCard
-        label="Water"
-        unit="ml"
-        color="#3B82F6"
-        target={goals.water_target_ml}
-        data={totals.map((t) => ({ date: t.date, value: t.water_ml }))}
-      />
+    <div className="space-y-5">
+      <div>
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
+          Energy balance
+        </p>
+        <div className="space-y-3">
+          <MetricTrendCard
+            label="Net Calories"
+            unit="kcal"
+            color="#10B981"
+            target={goals.calorie_target}
+            data={totals.map((t) => ({ date: t.date, value: t.calories - (burnedByDate.get(t.date) ?? 0) }))}
+          />
+          <ComparisonTrendCard
+            title="Consumed vs Burned"
+            unit="kcal"
+            series={[
+              { label: "Consumed", color: "#10B981", data: totals.map((t) => ({ date: t.date, value: t.calories })) },
+              { label: "Burned", color: "#3B82F6", data: workoutTotals.map((w) => ({ date: w.date, value: w.caloriesBurned })) },
+            ]}
+          />
+          <MetricTrendCard
+            label="Workout Duration"
+            unit="min"
+            color="#3B82F6"
+            data={workoutTotals.map((w) => ({ date: w.date, value: w.durationMinutes }))}
+          />
+          <MetricTrendCard
+            label="Workout Frequency"
+            unit="workouts"
+            color="#F59E0B"
+            data={workoutTotals.map((w) => ({ date: w.date, value: w.workoutCount }))}
+            formatValue={(v) => v.toFixed(1)}
+          />
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
+          Nutrition
+        </p>
+        <div className="space-y-3">
+          <MetricTrendCard
+            label="Calories"
+            unit="kcal"
+            color="#10B981"
+            target={goals.calorie_target}
+            data={totals.map((t) => ({ date: t.date, value: t.calories }))}
+          />
+          <MetricTrendCard
+            label="Protein"
+            unit="g"
+            color="#10B981"
+            target={goals.protein_target_g}
+            data={totals.map((t) => ({ date: t.date, value: t.protein_g }))}
+          />
+          <MetricTrendCard
+            label="Carbs"
+            unit="g"
+            color="#3B82F6"
+            target={goals.carb_target_g}
+            data={totals.map((t) => ({ date: t.date, value: t.carbs_g }))}
+          />
+          <MetricTrendCard
+            label="Fat"
+            unit="g"
+            color="#F59E0B"
+            target={goals.fat_target_g}
+            data={totals.map((t) => ({ date: t.date, value: t.fat_g }))}
+          />
+          <MetricTrendCard
+            label="Fibre"
+            unit="g"
+            color="#10B981"
+            target={goals.fibre_target_g}
+            data={totals.map((t) => ({ date: t.date, value: t.fibre_g }))}
+          />
+          <MetricTrendCard
+            label="Water"
+            unit="ml"
+            color="#3B82F6"
+            target={goals.water_target_ml}
+            data={totals.map((t) => ({ date: t.date, value: t.water_ml }))}
+          />
+        </div>
+      </div>
     </div>
   );
 }
