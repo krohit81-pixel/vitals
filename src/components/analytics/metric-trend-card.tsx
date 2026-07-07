@@ -19,11 +19,19 @@ export interface MetricTrendCardProps {
   data: MetricPoint[];
   /** Daily target, if this metric has one — drives the reference line and consistency badge. */
   target?: number;
-  /** Override how the KPI number is displayed, e.g. rounding differently per metric. */
-  formatValue?: (value: number) => string;
+  /**
+   * How to display the KPI number. A string, not a function — this component
+   * is rendered from Server Components (Dashboard), and Next.js can't pass a
+   * plain function across that boundary (only Server Actions can cross it).
+   * Defaults to whole-number formatting.
+   */
+  format?: "integer" | "oneDecimal";
 }
 
-const defaultFormat = (v: number) => Math.round(v).toLocaleString();
+const FORMATTERS: Record<NonNullable<MetricTrendCardProps["format"]>, (v: number) => string> = {
+  integer: (v) => Math.round(v).toLocaleString(),
+  oneDecimal: (v) => v.toFixed(1),
+};
 
 export function MetricTrendCard({
   label,
@@ -31,8 +39,9 @@ export function MetricTrendCard({
   color,
   data,
   target,
-  formatValue = defaultFormat,
+  format = "integer",
 }: MetricTrendCardProps) {
+  const formatValue = FORMATTERS[format];
   const values = data.map((d) => d.value);
   const avg = average(values);
   const consistency = target ? calcConsistency(values, target) : undefined;

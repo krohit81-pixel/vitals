@@ -1,61 +1,73 @@
-# Changes — brand logo integration
+# Changes — simplified Apple Health onboarding
 
-**Files to add (new):**
-- `public/icon-512.png`, `public/icon-192.png`, `public/apple-touch-icon.png`, `public/logo.png`
-- `src/components/shared/logo.tsx`
-- `src/app/(app)/loading.tsx`
+**Files to replace:**
+- `src/lib/nutrition/health-sync.ts`
+- `src/app/api/health/sync/route.ts`
+- `src/app/(app)/profile/health/page.tsx`
 
-**Files to replace (existing):**
-- `src/app/layout.tsx`
-- `src/app/(app)/dashboard/page.tsx`
-- `src/app/(auth)/login/page.tsx`
-- `src/app/(auth)/signup/page.tsx`
-- `src/components/navigation/sidebar.tsx`
-
-All in `vitals-logo.zip`, paths mirror the repo. No SQL, no new npm dependencies.
+All in `vitals-health-simplified.zip`. No SQL changes, no new env vars.
 
 ---
 
-## What I did with the source image
+## First — why "Get Workouts" wasn't showing up
 
-Your logo photo (`IMG_7988`) is a nice metallic-green mockup on textured paper —
-portrait, 735×807. Cropped it to a centered square (the circle logo is centered in the
-frame, so this keeps it intact) and generated the four sizes above from that crop:
-512px and 192px for the PWA manifest, 180px for iOS home-screen (`apple-touch-icon`),
-and 256px for general in-app use (header, auth, sidebar).
+Confirmed via research, not a guess: Apple consolidated Health-reading actions into a
+single **"Find Health Samples"** action (filtered by a Type parameter) some time back.
+"Get Workouts" as a distinct action doesn't exist on current iOS — that's exactly why it
+was missing on your 26.5 device. My original instructions were wrong. Fixed.
 
-I didn't attempt to strip the off-white paper background out from behind the circle —
-doing that well needs real background-removal (the shadow/lighting gradients in the
-photo would key out messily with a simple color threshold), and it wasn't necessary
-anyway: every placement clips the image into a circle via CSS, so only the circular logo
-itself ever shows. The paper texture inside the circle actually reads as a nice subtle
-letterpress/premium detail rather than a flaw.
+## And — why I can't hand you an importable .shortcut file
 
-## The 5 placements, plus one more
+Worth repeating plainly since you asked directly: the `.shortcut` format is an
+undocumented binary/plist structure, and iCloud share links can only be created by
+uploading from the Shortcuts app on a real device — there's no API for either. I have no
+way to construct or test one from here, and guessing at the internal structure risks
+handing you a file that fails to import. So I redesigned this two ways instead, both of
+which are things I *can* actually verify and control:
 
-1. **Header, next to the greeting** — `Logo` (48px) added to the left of "Good
-   afternoon, Rohit" on Dashboard, 12px gap, sized to roughly match the two-line
-   greeting block's height.
-2. **App icon / favicon** — `layout.tsx` now has an `icons` metadata block (browser
-   tab, bookmarks, iOS home screen via `apple-touch-icon`), and `manifest.json`'s
-   `icon-192.png`/`icon-512.png` references now point at real files instead of
-   404ing (they were referenced but never actually generated back in Milestone 1).
-3. **Splash/loading screen** — new `src/app/(app)/loading.tsx`, using Next's built-in
-   `loading.tsx` convention (auto-shown during navigation/data-fetching within the
-   authenticated section) — centered logo + "Vitals" below it, per the spec.
-4. **Auth screens** — replaced the placeholder green square-with-a-Leaf-icon on both
-   Login and Signup with the real logo, same top-center position.
-5. **Brand consistency** — one shared `Logo` component (`sm`/`md`/`lg` = 32/48/64px)
-   is the single place sizing lives, so every placement stays consistent if you ever
-   want to adjust it.
+### 1. Fewer, currently-correct steps
 
-**Bonus (not in the original 5, but the same category of fix):** the desktop sidebar
-had that same placeholder green-square-Leaf-icon next to the "Vitals" wordmark — swapped
-that for the real logo too, since leaving a fake mark right next to the real one would've
-undercut the "consistent branding" goal.
+Old (wrong) step 3: "Get Workouts." New: **Find Health Samples** → Type: Workouts →
+Start Date: Today. That action has existed across recent iOS versions and is what's
+actually in front of you.
+
+### 2. The bigger change — stopped asking Shortcuts to build a dictionary at all
+
+The old design asked you to manually map each workout field (type, date, time, duration,
+calories, UUID) into a JSON dictionary inside the Shortcut — the fussiest, most
+version-fragile part, and exactly the kind of step that breaks silently when Apple
+tweaks something. The new design: **drop the raw Find Health Samples result straight into
+the request body.** No field-mapping in Shortcuts at all. All the parsing now happens
+server-side in `extractWorkoutFields()`, which:
+
+- Checks several plausible key-name variants for each field (e.g. type might come through
+  as `"Workout Type"`, `"Activity Type"`, or just `"Type"` — it tries all of them), since
+  Apple doesn't publicly document the exact dictionary shape Shortcuts produces.
+- Parses numbers defensively — handles `"450 kcal"` as a string, a plain number, whatever
+  comes through.
+- Extracts date/time as the literal digits from the date string (regex on the ISO prefix)
+  rather than reinterpreting through a `Date` object — avoids a timezone-shift bug, same
+  category as ones fixed earlier for meal timestamps.
+- Returns `null` (never throws) for anything it can't confidently read, and the sync route
+  now reports `{ imported, skipped, total }` so a partial success is visible instead of
+  silent.
+
+**Honest limitation:** I still can't verify Apple's *exact* JSON key names without a real
+device — nothing publicly documents this. The extractor is built to be tolerant rather
+than exact, and the Settings page now explains this directly: if `skipped` stays above 0
+on your first real sync, that means a field is labeled differently than expected on your
+device, not that something's broken — and it's worth telling me so I can add that
+specific variant to the extractor's list.
+
+### Also added
+
+An optional final **Show Result** step in the Shortcut, displaying the sync response —
+gives you immediate pass/fail feedback each time it runs, without needing to check the
+website.
 
 ---
 
 ## Verified
 
-`npx tsc --noEmit` and `npx eslint src` both clean.
+`npx tsc --noEmit` and `npx eslint src` both clean. (The actual field-name tolerance can
+only really be confirmed against your real device's output — flagged above.)

@@ -241,7 +241,7 @@ function TrendsView({
             unit="workouts"
             color="#F59E0B"
             data={workoutTotals.map((w) => ({ date: w.date, value: w.workoutCount }))}
-            formatValue={(v) => v.toFixed(1)}
+            format="oneDecimal"
           />
         </div>
       </div>
