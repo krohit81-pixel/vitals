@@ -11,9 +11,12 @@ import { DateNavigator } from "@/components/shared/date-navigator";
 import { PeriodSelector } from "@/components/dashboard/period-selector";
 import { MetricTrendCard } from "@/components/analytics/metric-trend-card";
 import { ComparisonTrendCard } from "@/components/analytics/comparison-trend-card";
+import { MacroSplitCard } from "@/components/analytics/macro-split-card";
+import { StreakCard } from "@/components/dashboard/streak-card";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
 import { getWorkoutCaloriesForDate, getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
-import { type ViewMode, periodBounds } from "@/lib/nutrition/date";
+import { computeStreakDays, type StreakDay } from "@/lib/nutrition/streak";
+import { type ViewMode, periodBounds, addDays } from "@/lib/nutrition/date";
 import type { WorkoutType } from "@/lib/nutrition/workout-type";
 
 export default async function DashboardPage({
@@ -41,6 +44,15 @@ export default async function DashboardPage({
     getWorkoutTotalsRange(supabase, user!.id, rangeStart, rangeEnd),
   ]);
 
+  // Streak always looks at the 7 days ending on whatever date is being
+  // viewed, independent of the Day/Week/Month selector above.
+  const streakStart = addDays(anchor, -6);
+  const [streakTotals, streakWorkouts] = await Promise.all([
+    getDailyTotalsRange(supabase, user!.id, streakStart, anchor),
+    getWorkoutTotalsRange(supabase, user!.id, streakStart, anchor),
+  ]);
+  const burnedByStreakDate = new Map(streakWorkouts.map((w) => [w.date, w.caloriesBurned]));
+
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
   const g = goals ?? {
     calorie_target: 2000,
@@ -50,6 +62,15 @@ export default async function DashboardPage({
     fibre_target_g: 30,
     water_target_ml: 2500,
   };
+
+  const streakDays = computeStreakDays(
+    streakTotals.map((t) => ({
+      date: t.date,
+      calories: t.calories,
+      caloriesBurned: burnedByStreakDate.get(t.date) ?? 0,
+    })),
+    g.calorie_target
+  );
 
   return (
     <div className="animate-fade-up space-y-5">
@@ -77,6 +98,7 @@ export default async function DashboardPage({
           goals={g}
           supabaseUserId={user!.id}
           date={anchor}
+          streakDays={streakDays}
         />
       ) : (
         <TrendsView totals={rangeTotals} workoutTotals={workoutRangeTotals} goals={g} />
@@ -90,6 +112,7 @@ async function DayView({
   goals,
   supabaseUserId,
   date,
+  streakDays,
 }: {
   totals: { calories: number; protein_g: number; carbs_g: number; fat_g: number; fibre_g: number; water_ml: number };
   goals: {
@@ -102,6 +125,7 @@ async function DayView({
   };
   supabaseUserId: string;
   date: string;
+  streakDays: StreakDay[];
 }) {
   const supabase = await createClient();
   const [{ data: meals }, { data: workouts }, burned] = await Promise.all([
@@ -157,6 +181,8 @@ async function DayView({
         </span>
         <CalorieRing consumed={Math.round(totals.calories)} target={goals.calorie_target} burned={Math.round(burned)} />
       </section>
+
+      <StreakCard days={streakDays} />
 
       <section className="grid grid-cols-2 gap-3">
         <MacroCard icon={Beef} label="Protein" current={Math.round(totals.protein_g)} target={goals.protein_target_g} unit="g" />
@@ -251,6 +277,9 @@ function TrendsView({
           Nutrition
         </p>
         <div className="space-y-3">
+          <MacroSplitCard
+            data={totals.map((t) => ({ date: t.date, fatG: t.fat_g, carbsG: t.carbs_g, proteinG: t.protein_g }))}
+          />
           <MetricTrendCard
             label="Calories"
             unit="kcal"

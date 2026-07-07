@@ -3,6 +3,23 @@
 Items mentioned as "later"/"future" during development, kept here so they don't get lost.
 Not yet built. Move items into an actual milestone/version when ready to build.
 
+## Shipped in v0.4
+
+- Week/Month trend charts switched from area charts to **bar charts** — each bar shaded
+  by whether that day crossed target.
+- Every trend card's header redesigned around an **Under/Over** framing (e.g. "118
+  under", "6 over"), colored per-metric, plus "X of Y avg/day" underneath — mirrors a
+  budget-gauge feel instead of a plain average.
+- Consumed vs Burned chart rebuilt as grouped bars **plus a Net total line** overlaid —
+  shows consumed, burned, and the resulting total together per day, not just two
+  separate series.
+- **Streak card** — real computation (not decorative): a day counts as a "hit" if
+  something was logged and net calories stayed within 5% of target; shows current streak
+  length and the last 7 days as checkmark dots. Always reflects the 7 days ending on
+  whichever date is being viewed.
+- **Macro Split card** — pie chart (average Fat/Carbs/Protein proportion) + stacked daily
+  bars + inline percentages, added to the Week/Month Nutrition section.
+
 ## Shipped in Milestone 4
 
 - Manual workout logging — full CRUD (`/workouts/new`, `/workouts/[id]`), 12 workout

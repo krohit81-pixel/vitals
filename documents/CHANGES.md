@@ -1,73 +1,65 @@
-# Changes — simplified Apple Health onboarding
+# Changes — v0.4: dashboard/analytics redesign
 
-**Files to replace:**
-- `src/lib/nutrition/health-sync.ts`
-- `src/app/api/health/sync/route.ts`
-- `src/app/(app)/profile/health/page.tsx`
+**Files to add (new):**
+- `src/lib/nutrition/streak.ts`
+- `src/components/dashboard/streak-card.tsx`
+- `src/components/analytics/macro-split-card.tsx`
 
-All in `vitals-health-simplified.zip`. No SQL changes, no new env vars.
+**Files to replace (existing):**
+- `BACKLOG.md`
+- `src/components/analytics/metric-trend-card.tsx`
+- `src/components/analytics/comparison-trend-card.tsx`
+- `src/app/(app)/dashboard/page.tsx`
+
+All in `vitals-v0.4.zip`, paths mirror the repo. No SQL changes, no new dependencies
+(still just `recharts`, already installed).
 
 ---
 
-## First — why "Get Workouts" wasn't showing up
+## What changed, against your reference screenshot
 
-Confirmed via research, not a guess: Apple consolidated Health-reading actions into a
-single **"Find Health Samples"** action (filtered by a Type parameter) some time back.
-"Get Workouts" as a distinct action doesn't exist on current iOS — that's exactly why it
-was missing on your 26.5 device. My original instructions were wrong. Fixed.
+**1. Bar charts, not area charts.** Every trend card (Calories, Protein, Carbs, Fat,
+Fibre, Water, Workout Duration, Workout Frequency) now renders as a bar chart. Bars are
+shaded solid when that day crossed target, softer when under — a lighter-weight version
+of your reference's checkmark/red-line treatment, done through color rather than icons
+overlaid on each bar (kept the chart component generic rather than hardcoding icon
+placement logic into it).
 
-## And — why I can't hand you an importable .shortcut file
+**2. Under/Over headline framing.** Replaced the plain "average/day" number with your
+screenshot's gauge-card language: a big colored number ("118" / "6"), labeled "under" or
+"over," in that metric's own color — same as your reference showing calories in green,
+protein in purple. Kept the existing consistency-% badge alongside it rather than
+replacing it, since that was useful information the reference screenshot doesn't
+otherwise surface.
 
-Worth repeating plainly since you asked directly: the `.shortcut` format is an
-undocumented binary/plist structure, and iCloud share links can only be created by
-uploading from the Shortcuts app on a real device — there's no API for either. I have no
-way to construct or test one from here, and guessing at the internal structure risks
-handing you a file that fails to import. So I redesigned this two ways instead, both of
-which are things I *can* actually verify and control:
+**3. Consumed vs Burned → grouped bars + a Net line.** This is the "breakdown of
+consumed, burned, and total for each day" ask specifically: two bars per day (Consumed,
+Burned) with a dark line tracing Net (their difference) across the top — all three
+numbers visible in one chart instead of needing to infer the total.
 
-### 1. Fewer, currently-correct steps
+**4. Streak — built as a real mechanic, not a static row of dots.** A day counts as a
+"hit" only if something was actually logged (an empty day can't accidentally count) and
+net calories landed within 5% of target. Shows your current streak length plus the last
+7 days as filled/empty circles. Lives right under the calorie ring on the Dashboard's
+Day view, and always reflects the 7 days ending on whatever date `DateNavigator` has you
+looking at — so it stays meaningful if you're reviewing a past day, not just "today."
 
-Old (wrong) step 3: "Get Workouts." New: **Find Health Samples** → Type: Workouts →
-Start Date: Today. That action has existed across recent iOS versions and is what's
-actually in front of you.
+**5. Macro Split card** — pie chart (average Fat/Carbs/Protein proportion, gram-based
+like your reference, not calorie-weighted) plus a stacked daily bar and inline
+percentages. Added to the Week/Month Nutrition section, right above the individual
+Protein/Carbs/Fat cards. No new query needed — reuses the same range data those cards
+already fetch.
 
-### 2. The bigger change — stopped asking Shortcuts to build a dictionary at all
+## What I deliberately didn't copy
 
-The old design asked you to manually map each workout field (type, date, time, duration,
-calories, UUID) into a JSON dictionary inside the Shortcut — the fussiest, most
-version-fragile part, and exactly the kind of step that breaks silently when Apple
-tweaks something. The new design: **drop the raw Find Health Samples result straight into
-the request body.** No field-mapping in Shortcuts at all. All the parsing now happens
-server-side in `extractWorkoutFields()`, which:
-
-- Checks several plausible key-name variants for each field (e.g. type might come through
-  as `"Workout Type"`, `"Activity Type"`, or just `"Type"` — it tries all of them), since
-  Apple doesn't publicly document the exact dictionary shape Shortcuts produces.
-- Parses numbers defensively — handles `"450 kcal"` as a string, a plain number, whatever
-  comes through.
-- Extracts date/time as the literal digits from the date string (regex on the ISO prefix)
-  rather than reinterpreting through a `Date` object — avoids a timezone-shift bug, same
-  category as ones fixed earlier for meal timestamps.
-- Returns `null` (never throws) for anything it can't confidently read, and the sync route
-  now reports `{ imported, skipped, total }` so a partial success is visible instead of
-  silent.
-
-**Honest limitation:** I still can't verify Apple's *exact* JSON key names without a real
-device — nothing publicly documents this. The extractor is built to be tolerant rather
-than exact, and the Settings page now explains this directly: if `skipped` stays above 0
-on your first real sync, that means a field is labeled differently than expected on your
-device, not that something's broken — and it's worth telling me so I can add that
-specific variant to the extractor's list.
-
-### Also added
-
-An optional final **Show Result** step in the Shortcut, displaying the sync response —
-gives you immediate pass/fail feedback each time it runs, without needing to check the
-website.
+The reference screenshot's orange gradient header, calendar pill, and bottom nav icon
+style are a different app's visual identity — Vitals already has its own (emerald/cream,
+established since Milestone 1), so I took the *mechanics* (bar charts, under/over
+framing, streak, macro pie+stack) without importing another app's branding on top of
+yours.
 
 ---
 
 ## Verified
 
-`npx tsc --noEmit` and `npx eslint src` both clean. (The actual field-name tolerance can
-only really be confirmed against your real device's output — flagged above.)
+`npx tsc --noEmit` and `npx eslint src` both clean.
