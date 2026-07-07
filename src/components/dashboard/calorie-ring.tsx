@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Flame, Zap, Target } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function CalorieRing({
   consumed,
@@ -17,24 +19,33 @@ export function CalorieRing({
   const adjustedTarget = target + burned;
   const remaining = Math.max(adjustedTarget - consumed, 0);
   const pct = Math.min(consumed / adjustedTarget, 1);
+  const over = consumed > adjustedTarget;
 
-  const size = 220;
-  const stroke = 16;
+  const size = 236;
+  const stroke = 20;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
 
   return (
-    <div className="flex flex-col items-center py-4">
+    <div className="flex flex-col items-center py-2">
       {/* Sized exactly to the ring, holding only the SVG + overlay — keeps the
           text centered on the ring regardless of what renders below it. */}
       <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
+        <svg width={size} height={size} className="-rotate-90 drop-shadow-[0_4px_16px_rgba(16,185,129,0.25)]">
+          <defs>
+            <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#6EE7B7" />
+              <stop offset="55%" stopColor="#10B981" />
+              <stop offset="100%" stopColor="#047857" />
+            </linearGradient>
+          </defs>
+
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
             strokeWidth={stroke}
-            className="fill-none stroke-black/[0.05] dark:stroke-white/[0.06]"
+            className="fill-none stroke-black/[0.05] dark:stroke-white/[0.07]"
           />
           <motion.circle
             cx={size / 2}
@@ -42,36 +53,65 @@ export function CalorieRing({
             r={radius}
             strokeWidth={stroke}
             strokeLinecap="round"
-            className="fill-none stroke-emerald-500"
+            stroke={over ? "#F59E0B" : "url(#ring-gradient)"}
+            className="fill-none"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: circumference * (1 - pct) }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
           />
         </svg>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display text-4xl font-semibold tabular-nums text-ink dark:text-cream-100">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+          <span className="font-display text-[2.75rem] leading-none font-bold tabular-nums text-ink dark:text-cream-100">
             {remaining.toLocaleString()}
           </span>
-          <span className="text-sm text-black/50 dark:text-white/50">calories remaining</span>
+          <span className="text-[13px] font-medium text-black/45 dark:text-white/45">
+            kcal {over ? "over" : "remaining"}
+          </span>
         </div>
       </div>
 
-      <div className="mt-5 flex w-full justify-between px-2 text-center">
-        <Stat label="Consumed" value={consumed} />
-        <Stat label="Burned" value={burned} />
-        <Stat label="Remaining" value={remaining} />
+      <div className="mt-6 flex w-full items-stretch justify-center gap-2">
+        <RingStat icon={Flame} label="Consumed" value={consumed} colorClass="bg-amber-400/15 text-amber-500" />
+        <Divider />
+        <RingStat icon={Zap} label="Burned" value={burned} colorClass="bg-sky-400/15 text-sky-500" />
+        <Divider />
+        <RingStat
+          icon={Target}
+          label={over ? "Over" : "Remaining"}
+          value={remaining}
+          colorClass="bg-emerald-400/15 text-emerald-500"
+        />
       </div>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Divider() {
+  return <div className="w-px self-stretch bg-black/[0.06] dark:bg-white/[0.08]" />;
+}
+
+function RingStat({
+  icon: Icon,
+  label,
+  value,
+  colorClass,
+}: {
+  icon: typeof Flame;
+  label: string;
+  value: number;
+  colorClass: string;
+}) {
   return (
-    <div className="flex flex-col">
-      <span className="font-display text-lg font-medium tabular-nums">{value.toLocaleString()}</span>
-      <span className="text-xs text-black/45 dark:text-white/45">{label}</span>
+    <div className="flex flex-1 flex-col items-center gap-1.5 px-1">
+      <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", colorClass)}>
+        <Icon size={15} strokeWidth={2.25} />
+      </div>
+      <span className="font-display text-base font-semibold tabular-nums text-ink dark:text-cream-100">
+        {value.toLocaleString()}
+      </span>
+      <span className="text-[11px] text-black/45 dark:text-white/45">{label}</span>
     </div>
   );
 }

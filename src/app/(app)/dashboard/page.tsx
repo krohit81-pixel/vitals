@@ -151,9 +151,9 @@ async function DayView({
 
   return (
     <div className="space-y-6">
-      <section className="glass-card flex flex-col items-center">
-        <span className="mb-1 text-sm font-medium text-black/60 dark:text-white/60">
-          Summary
+      <section className="glass-card flex flex-col items-center px-4 py-6">
+        <span className="mb-2 text-[11px] font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
+          Energy Today
         </span>
         <CalorieRing consumed={Math.round(totals.calories)} target={goals.calorie_target} burned={Math.round(burned)} />
       </section>
