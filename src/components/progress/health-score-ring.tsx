@@ -3,7 +3,20 @@
 import { motion } from "framer-motion";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 
-export function HealthScoreRing({ score, deltaVsPrevious }: { score: number; deltaVsPrevious: number | null }) {
+export function HealthScoreRing({
+  score,
+  deltaVsPrevious,
+  previousPeriodLabel,
+}: {
+  score: number;
+  /** null when the previous period has no real data to compare against —
+   * showing a delta then would be misleading (it'd just equal the current
+   * score, since "vs zero" isn't a real comparison). */
+  deltaVsPrevious: number | null;
+  /** e.g. "Jun 27 – Jul 3" — always shown so it's clear what's being compared,
+   * even when there's no delta to show yet. */
+  previousPeriodLabel: string;
+}) {
   const size = 168;
   const stroke = 14;
   const radius = (size - stroke) / 2;
@@ -45,7 +58,7 @@ export function HealthScoreRing({ score, deltaVsPrevious }: { score: number; del
         </div>
       </div>
 
-      {deltaVsPrevious !== null && (
+      {deltaVsPrevious !== null ? (
         <div
           className={`mt-2 flex items-center gap-1 text-sm font-medium ${
             deltaVsPrevious > 0
@@ -56,8 +69,12 @@ export function HealthScoreRing({ score, deltaVsPrevious }: { score: number; del
           }`}
         >
           <DeltaIcon size={14} />
-          {Math.abs(deltaVsPrevious)} vs last period
+          {Math.abs(deltaVsPrevious)} vs {previousPeriodLabel}
         </div>
+      ) : (
+        <p className="mt-2 text-xs text-black/35 dark:text-white/35">
+          Not enough data yet in {previousPeriodLabel} to compare
+        </p>
       )}
     </div>
   );

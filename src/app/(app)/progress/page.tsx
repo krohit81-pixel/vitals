@@ -6,15 +6,18 @@ import { GreetingText } from "@/components/dashboard/greeting-text";
 import { HealthScoreRing } from "@/components/progress/health-score-ring";
 import { RangeSelector } from "@/components/progress/range-selector";
 import { OverviewCard } from "@/components/progress/overview-card";
+import { MiniRing } from "@/components/progress/mini-ring";
+import { MiniMacroDonut } from "@/components/progress/mini-macro-donut";
 import { HealthInsightsCard } from "./health-insights";
 import { HealthInsightsSkeleton } from "./health-insights-skeleton";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
 import { getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
 import { getDailyMetricSeries, summarizeSeries } from "@/lib/nutrition/get-health-metrics";
 import { calcWeekConsistencies, calcRhythmScore, trendDirection } from "@/lib/nutrition/coach-insights";
+import { average } from "@/lib/nutrition/consistency";
 import { computeStreakDays, currentStreakLength } from "@/lib/nutrition/streak";
 import { computeAchievements } from "@/lib/nutrition/achievements";
-import { addDays, rangeToDays, type RangeOption } from "@/lib/nutrition/date";
+import { addDays, rangeToDays, parseDateString, type RangeOption } from "@/lib/nutrition/date";
 
 export default async function ProgressPage({
   searchParams,
@@ -46,7 +49,6 @@ export default async function ProgressPage({
     workoutTotals,
     { data: weightLogs },
     stepsSeries,
-    heartRateSeries,
     rhrSeries,
   ] = await Promise.all([
     supabase.from("goals").select("*").eq("user_id", userId).single(),
@@ -60,7 +62,6 @@ export default async function ProgressPage({
       .order("measured_at", { ascending: false })
       .limit(1),
     getDailyMetricSeries(supabase, userId, "step_count", periodStart, today),
-    getDailyMetricSeries(supabase, userId, "heart_rate", periodStart, today),
     getDailyMetricSeries(supabase, userId, "resting_heart_rate", periodStart, today),
   ]);
 
@@ -112,7 +113,12 @@ export default async function ProgressPage({
 
   const prevScoreInputs = [prevConsistencies.calories, prevConsistencies.protein, prevConsistencies.fibre];
   const prevHealthScore = calcRhythmScore(prevScoreInputs);
-  const scoreDelta = healthScore.score - prevHealthScore.score;
+  // "vs 0" isn't a real comparison — only show a delta if the previous period
+  // actually has logged data, otherwise it just misleadingly equals the
+  // current score (exactly the bug that was reported).
+  const hasPreviousPeriodData = prevTotals.some((t) => t.calories > 0);
+  const scoreDelta = hasPreviousPeriodData ? healthScore.score - prevHealthScore.score : null;
+  const previousPeriodLabel = `${parseDateString(prevPeriodStart).toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${parseDateString(prevPeriodEnd).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
 
   const weightGoalProgressPct =
     currentWeight && earliestWeightLog && goals.goal_weight_kg && earliestWeightLog.weight !== goals.goal_weight_kg
@@ -133,6 +139,11 @@ export default async function ProgressPage({
     maxWorkoutsInAWeek: totalWorkouts,
   });
 
+  const stepsConsistencyPct = stepsStats.average > 0 ? Math.min((stepsStats.average / 8000) * 100, 100) : 0;
+  const avgFatG = average(totals.map((t) => t.fat_g));
+  const avgCarbsG = average(totals.map((t) => t.carbs_g));
+  const avgProteinG = average(totals.map((t) => t.protein_g));
+
   return (
     <div className="animate-fade-up space-y-6 pb-8">
       <header className="flex items-start justify-between">
@@ -149,7 +160,7 @@ export default async function ProgressPage({
         <span className="mb-2 text-[11px] font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
           Health Score
         </span>
-        <HealthScoreRing score={healthScore.score} deltaVsPrevious={scoreDelta} />
+        <HealthScoreRing score={healthScore.score} deltaVsPrevious={scoreDelta} previousPeriodLabel={previousPeriodLabel} />
       </div>
 
       <RangeSelector range={range} />
@@ -174,7 +185,7 @@ export default async function ProgressPage({
           unit={currentWeight?.unit}
           comparisonLabel={null}
           comparisonDirection={null}
-          sparkline={[]}
+          visual={weightGoalProgressPct !== null ? <MiniRing percent={weightGoalProgressPct} color="#3B82F6" /> : undefined}
           color="#3B82F6"
           href="/progress/weight"
         />
@@ -185,7 +196,6 @@ export default async function ProgressPage({
           unit="bpm"
           comparisonLabel={rhrStats.latest !== null ? `${rhrDirection === "flat" ? "Stable" : rhrDirection}` : null}
           comparisonDirection={rhrDirection === "up" ? "down" : rhrDirection === "down" ? "up" : "flat"}
-          sparkline={heartRateSeries.map((p) => p.value)}
           color="#EF4444"
           href="/progress/metric/heart_rate"
         />
@@ -196,7 +206,7 @@ export default async function ProgressPage({
           unit="steps/day"
           comparisonLabel={`${totalWorkouts} workout${totalWorkouts === 1 ? "" : "s"}`}
           comparisonDirection="flat"
-          sparkline={stepsSeries.map((p) => p.value)}
+          visual={<MiniRing percent={stepsConsistencyPct} color="#F59E0B" />}
           color="#F59E0B"
           href="/progress/metric/step_count"
         />
@@ -207,7 +217,7 @@ export default async function ProgressPage({
           unit="protein"
           comparisonLabel={`${consistencies.calories}% calories on target`}
           comparisonDirection="flat"
-          sparkline={totals.map((t) => t.calories)}
+          visual={<MiniMacroDonut fatG={avgFatG} carbsG={avgCarbsG} proteinG={avgProteinG} />}
           color="#10B981"
           href="/progress/nutrition"
         />

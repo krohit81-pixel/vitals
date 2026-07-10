@@ -1,5 +1,10 @@
 import { average, calcConsistency } from "./consistency";
 
+// Re-exported because callers keep reasonably assuming this lives here
+// alongside the other week-level helpers — easier to fix the import surface
+// once than keep fixing the same mistake at every call site.
+export { average };
+
 export type TrendDirection = "up" | "down" | "flat";
 
 /** Compares the first half of the week's average to the second half's. */

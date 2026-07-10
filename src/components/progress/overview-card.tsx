@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { ArrowUp, ArrowDown, Minus, ChevronRight } from "lucide-react";
-import { Card } from "@/components/ui/card";
 
 export function OverviewCard({
   title,
@@ -12,7 +10,7 @@ export function OverviewCard({
   unit,
   comparisonLabel,
   comparisonDirection,
-  sparkline,
+  visual,
   color,
   href,
 }: {
@@ -23,12 +21,12 @@ export function OverviewCard({
   unit?: string;
   comparisonLabel: string | null;
   comparisonDirection: "up" | "down" | "flat" | null;
-  sparkline: number[];
+  /** Pre-rendered ring/donut, e.g. <MiniRing percent={72} color="#10B981" /> — optional, since not every card has a meaningful 0-100 progress to show (Heart rate has no "goodness" percentage without edging into medical judgment). */
+  visual?: React.ReactNode;
   color: string;
   href: string;
 }) {
   const DeltaIcon = comparisonDirection === "up" ? ArrowUp : comparisonDirection === "down" ? ArrowDown : Minus;
-  const data = sparkline.map((v, i) => ({ i, value: v }));
 
   return (
     <Link href={href} className="pressable glass-card block p-4">
@@ -66,19 +64,7 @@ export function OverviewCard({
           )}
         </div>
 
-        <div className="h-10 w-20 shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id={`fill-${title}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area type="monotone" dataKey="value" stroke={color} strokeWidth={1.75} fill={`url(#fill-${title})`} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        {visual && <div className="shrink-0">{visual}</div>}
       </div>
     </Link>
   );
