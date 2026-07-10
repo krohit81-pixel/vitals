@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { Flame, Zap, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const APPROACHING_THRESHOLD = 200; // kcal left before the ring warns amber
+
 export function CalorieRing({
   consumed,
   target,
@@ -17,21 +19,43 @@ export function CalorieRing({
   burned?: number;
 }) {
   const adjustedTarget = target + burned;
-  const remaining = Math.max(adjustedTarget - consumed, 0);
+  // Not clamped to 0 — going over needs to actually show by how much, not
+  // just disappear into "0 remaining."
+  const remaining = adjustedTarget - consumed;
+  const isOver = remaining < 0;
+  const isApproaching = !isOver && remaining <= APPROACHING_THRESHOLD;
+  const displayValue = Math.abs(remaining);
   const pct = Math.min(consumed / adjustedTarget, 1);
-  const over = consumed > adjustedTarget;
 
   const size = 236;
   const stroke = 20;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
 
+  const statusColor = isOver ? "#EF4444" : isApproaching ? "#F59E0B" : null; // null = normal gradient
+  const remainingChipClass = isOver
+    ? "bg-red-400/15 text-red-500"
+    : isApproaching
+      ? "bg-amber-400/15 text-amber-500"
+      : "bg-emerald-400/15 text-emerald-500";
+
   return (
     <div className="flex flex-col items-center py-2">
       {/* Sized exactly to the ring, holding only the SVG + overlay — keeps the
           text centered on the ring regardless of what renders below it. */}
       <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90 drop-shadow-[0_4px_16px_rgba(16,185,129,0.25)]">
+        <svg
+          width={size}
+          height={size}
+          className={cn(
+            "-rotate-90",
+            isOver
+              ? "drop-shadow-[0_4px_16px_rgba(239,68,68,0.3)]"
+              : isApproaching
+                ? "drop-shadow-[0_4px_16px_rgba(245,158,11,0.3)]"
+                : "drop-shadow-[0_4px_16px_rgba(16,185,129,0.25)]"
+          )}
+        >
           <defs>
             <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#6EE7B7" />
@@ -53,7 +77,7 @@ export function CalorieRing({
             r={radius}
             strokeWidth={stroke}
             strokeLinecap="round"
-            stroke={over ? "#F59E0B" : "url(#ring-gradient)"}
+            stroke={statusColor ?? "url(#ring-gradient)"}
             className="fill-none"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
@@ -63,11 +87,14 @@ export function CalorieRing({
         </svg>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-          <span className="font-display text-[2.75rem] leading-none font-bold tabular-nums text-ink dark:text-cream-100">
-            {remaining.toLocaleString()}
+          <span
+            className="font-display text-[2.75rem] leading-none font-bold tabular-nums"
+            style={{ color: statusColor ?? undefined }}
+          >
+            {displayValue.toLocaleString()}
           </span>
           <span className="text-[13px] font-medium text-black/45 dark:text-white/45">
-            kcal {over ? "over" : "remaining"}
+            kcal {isOver ? "over" : "remaining"}
           </span>
         </div>
       </div>
@@ -79,9 +106,9 @@ export function CalorieRing({
         <Divider />
         <RingStat
           icon={Target}
-          label={over ? "Over" : "Remaining"}
-          value={remaining}
-          colorClass="bg-emerald-400/15 text-emerald-500"
+          label={isOver ? "Over" : "Remaining"}
+          value={displayValue}
+          colorClass={remainingChipClass}
         />
       </div>
     </div>

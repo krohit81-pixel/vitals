@@ -16,7 +16,7 @@ import { StreakCard } from "@/components/dashboard/streak-card";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
 import { getWorkoutCaloriesForDate, getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
 import { computeStreakDays, type StreakDay } from "@/lib/nutrition/streak";
-import { type ViewMode, periodBounds, addDays } from "@/lib/nutrition/date";
+import { type ViewMode, periodBounds, startOfWeek, endOfWeek } from "@/lib/nutrition/date";
 import type { WorkoutType } from "@/lib/nutrition/workout-type";
 
 export default async function DashboardPage({
@@ -46,10 +46,14 @@ export default async function DashboardPage({
 
   // Streak always looks at the 7 days ending on whatever date is being
   // viewed, independent of the Day/Week/Month selector above.
-  const streakStart = addDays(anchor, -6);
+  // Streak is always the fixed Monday–Sunday week containing whatever date is
+  // being viewed — not a rolling 7-day window — so it reads as a real weekly
+  // calendar, matching how most people actually think about a "week."
+  const streakStart = startOfWeek(anchor);
+  const streakEnd = endOfWeek(anchor);
   const [streakTotals, streakWorkouts] = await Promise.all([
-    getDailyTotalsRange(supabase, user!.id, streakStart, anchor),
-    getWorkoutTotalsRange(supabase, user!.id, streakStart, anchor),
+    getDailyTotalsRange(supabase, user!.id, streakStart, streakEnd),
+    getWorkoutTotalsRange(supabase, user!.id, streakStart, streakEnd),
   ]);
   const burnedByStreakDate = new Map(streakWorkouts.map((w) => [w.date, w.caloriesBurned]));
 

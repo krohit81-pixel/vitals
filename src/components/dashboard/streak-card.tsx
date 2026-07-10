@@ -1,11 +1,23 @@
-import { Check, Flame } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Check, X, Flame } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { parseDateString } from "@/lib/nutrition/date";
-import { currentStreakLength, type StreakDay } from "@/lib/nutrition/streak";
+import { localTodayString, parseDateString } from "@/lib/nutrition/date";
+import { classifyStreakDay, currentStreakLength, type StreakDay } from "@/lib/nutrition/streak";
 import { cn } from "@/lib/utils";
 
 export function StreakCard({ days }: { days: StreakDay[] }) {
-  const streak = currentStreakLength(days);
+  // "Today" must come from the browser — see date.ts's comments on why the
+  // server can't determine this reliably (UTC clock vs. the viewer's local
+  // day). Null until mounted; every day renders as "pending" until then,
+  // which is a safe default (never flashes a wrong hit/miss).
+  const [today, setToday] = useState<string | null>(null);
+  useEffect(() => {
+    setToday(localTodayString());
+  }, []);
+
+  const streak = today ? currentStreakLength(days, today) : 0;
 
   return (
     <Card className="flex items-center gap-4">
@@ -20,17 +32,21 @@ export function StreakCard({ days }: { days: StreakDay[] }) {
         <div className="mt-2 flex gap-1.5">
           {days.map((d) => {
             const label = parseDateString(d.date).toLocaleDateString(undefined, { weekday: "narrow" });
+            const state = today ? classifyStreakDay(d, today) : "pending";
+
             return (
               <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                 <div
                   className={cn(
                     "flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-medium",
-                    d.hit
-                      ? "bg-emerald-500 text-white"
-                      : "bg-black/[0.06] text-black/30 dark:bg-white/[0.08] dark:text-white/30"
+                    state === "hit" && "bg-emerald-500 text-white",
+                    state === "miss" && "bg-red-100 text-red-500 dark:bg-red-500/15",
+                    (state === "pending" || state === "future") &&
+                      "bg-black/[0.06] text-black/30 dark:bg-white/[0.08] dark:text-white/30"
                   )}
                 >
-                  {d.hit ? <Check size={12} strokeWidth={3} /> : null}
+                  {state === "hit" && <Check size={12} strokeWidth={3} />}
+                  {state === "miss" && <X size={12} strokeWidth={3} />}
                 </div>
                 <span className="text-[9px] text-black/35 dark:text-white/35">{label}</span>
               </div>
