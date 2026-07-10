@@ -20,7 +20,51 @@ Not yet built. Move items into an actual milestone/version when ready to build.
 - **Macro Split card** — pie chart (average Fat/Carbs/Protein proportion) + stacked daily
   bars + inline percentages, added to the Week/Month Nutrition section.
 
-## Shipped in Milestone 4
+## Shipped in Milestone 4 (Progress & Health Analytics)
+
+- **`weight_logs` rebuilt** to match this milestone's spec (weight/unit/measured_at/notes)
+  — the Milestone 1 version of this table was dead schema, never wired to any UI,
+  confirmed via full codebase search before dropping and recreating it.
+- **`health_metrics`** — new table for imported HealthSave data. `metric` is plain text,
+  not an enum, specifically so new metric types (sleep, VO2 max, blood pressure, ...)
+  can start flowing in later with zero migration, per the spec's "future additions
+  without redesign" requirement.
+- **JSON import engine** (`/profile/health-import`) — validates a HealthSave export,
+  splits it into plain metrics vs. workout pairs (correlated by matching timestamp +
+  source, with workout type parsed from the source string), dedupes via a unique
+  constraint, and imports real workouts straight into the existing `workout_logs` table
+  (reusing the `apple_health` source/dedup design from the earlier Activity Tracking
+  milestone). **Verified against your actual export file**, not just typechecked: 2,494
+  records → 2,488 metric readings + 3 correctly-paired workouts, zero skipped.
+- **Weight logging** — quick-add via the `+` sheet (current/previous/diff shown inline,
+  per the spec's example), full edit/delete history at `/weight`.
+- **Progress dashboard rebuilt**: Health Score ring (composite of nutrition/activity
+  consistency, gracefully degrading when a signal has no data yet), AI-generated
+  insights (new `generateHealthInsights()` across all three providers — Gemini/OpenAI/
+  Claude — mirroring the existing Coach feedback pattern), four overview cards (Weight/
+  Heart/Activity/Nutrition) with sparkline + trend + comparison, a 7D/30D/90D/1Y range
+  selector, and a small achievements row.
+- **Detail screens**: dedicated Weight screen (chart, current/goal/lost/BMI/weekly-
+  monthly averages, projected goal date) and Nutrition screen (reuses `MacroSplitCard`
+  and `MetricTrendCard` from earlier milestones) — plus **one generic metric-detail
+  route** (`/progress/metric/[metric]`) serving heart rate, HRV, SpO2, steps, distance,
+  and flights, rather than four separate bespoke pages.
+
+**Scope decisions made transparently, not silently:**
+- The spec asked for dedicated Heart and Activity *screens*; built as the one generic
+  metric-detail route above instead, reached by tapping through from the overview cards.
+  Same visual result per metric (matches your reference screenshots' layout exactly),
+  less code duplicated per metric — but if you specifically want a combined Heart screen
+  showing RHR+HRV+SpO2 together on one page (rather than one-metric-at-a-time), that's a
+  reasonable follow-up.
+- Achievements are a small, fixed set of deterministic checks (steps, streak, protein
+  consistency, active week, weight-goal progress) — not a full badge/gamification system.
+- Health Score's formula is a first pass (nutrition + activity consistency only) — it
+  deliberately doesn't try to score heart-rate metrics as "good/bad," since that edges
+  toward medical judgment the app isn't qualified to make. Worth revisiting the exact
+  weighting once there's real usage data to tune against.
+
+## Shipped in Milestone 4 (Activity Tracking)
 
 - Manual workout logging — full CRUD (`/workouts/new`, `/workouts/[id]`), 12 workout
   types, edit/delete for manually-entered workouts.

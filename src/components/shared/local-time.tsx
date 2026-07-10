@@ -25,3 +25,18 @@ export function LocalTime({ iso, className }: { iso: string; className?: string 
 
   return <span className={className}>{display}</span>;
 }
+
+/** Same reasoning as LocalTime, but includes the date — for lists spanning
+ * multiple days (e.g. weight history) where time-of-day alone loses context. */
+export function LocalDateTime({ iso, className }: { iso: string; className?: string }) {
+  const [display, setDisplay] = useState<string>("");
+
+  useEffect(() => {
+    const d = new Date(iso);
+    setDisplay(
+      `${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })} · ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+    );
+  }, [iso]);
+
+  return <span className={className}>{display}</span>;
+}

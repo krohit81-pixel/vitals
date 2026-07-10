@@ -1,5 +1,5 @@
-import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis } from "../types";
-import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt } from "../prompts";
+import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis, HealthInsights, HealthInsightsContext } from "../types";
+import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt, buildHealthInsightsPrompt } from "../prompts";
 import { extractJson, toMealAnalysis } from "../json";
 
 const MODEL = "gpt-4o-mini";
@@ -63,5 +63,10 @@ export class OpenAIProvider implements AIProvider {
   async generateCoachFeedback(context: CoachPromptContext): Promise<CoachFeedback> {
     const text = await chat([{ role: "user", content: buildCoachPrompt(context) }]);
     return extractJson(text) as CoachFeedback;
+  }
+
+  async generateHealthInsights(context: HealthInsightsContext): Promise<HealthInsights> {
+    const text = await chat([{ role: "user", content: buildHealthInsightsPrompt(context) }]);
+    return extractJson(text) as HealthInsights;
   }
 }

@@ -102,16 +102,42 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          weight_kg: number;
-          body_fat_pct: number | null;
-          photo_url: string | null;
-          logged_at: string;
+          weight: number;
+          unit: "kg" | "lb";
+          measured_at: string;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["weight_logs"]["Row"]> & {
           user_id: string;
-          weight_kg: number;
+          weight: number;
         };
         Update: Partial<Database["public"]["Tables"]["weight_logs"]["Row"]>;
+      Relationships: never[];
+      };
+      health_metrics: {
+        Row: {
+          id: string;
+          user_id: string;
+          metric: string;
+          value: number;
+          unit: string;
+          source: string;
+          recorded_at: string;
+          recorded_date: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["health_metrics"]["Row"]> & {
+          user_id: string;
+          metric: string;
+          value: number;
+          unit: string;
+          source: string;
+          recorded_at: string;
+          recorded_date: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["health_metrics"]["Row"]>;
       Relationships: never[];
       };
       ai_feedback: {

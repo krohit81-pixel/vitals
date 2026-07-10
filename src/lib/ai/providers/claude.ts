@@ -1,5 +1,5 @@
-import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis } from "../types";
-import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt } from "../prompts";
+import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis, HealthInsights, HealthInsightsContext } from "../types";
+import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt, buildHealthInsightsPrompt } from "../prompts";
 import { extractJson, toMealAnalysis } from "../json";
 
 const MODEL = "claude-sonnet-4-6";
@@ -57,5 +57,10 @@ export class ClaudeProvider implements AIProvider {
   async generateCoachFeedback(context: CoachPromptContext): Promise<CoachFeedback> {
     const text = await messages(buildCoachPrompt(context));
     return extractJson(text) as CoachFeedback;
+  }
+
+  async generateHealthInsights(context: HealthInsightsContext): Promise<HealthInsights> {
+    const text = await messages(buildHealthInsightsPrompt(context));
+    return extractJson(text) as HealthInsights;
   }
 }

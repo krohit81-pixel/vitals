@@ -3,7 +3,7 @@ import { GeminiProvider } from "./providers/gemini";
 import { OpenAIProvider } from "./providers/openai";
 import { ClaudeProvider } from "./providers/claude";
 
-export type { AIProvider, MealAnalysis, DetectedFoodItem, CoachFeedback } from "./types";
+export type { AIProvider, MealAnalysis, DetectedFoodItem, CoachFeedback, HealthInsights, HealthInsightsContext } from "./types";
 
 let cached: AIProvider | null = null;
 

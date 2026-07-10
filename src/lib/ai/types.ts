@@ -32,6 +32,18 @@ export interface CoachFeedback {
   recommendations: string[];
 }
 
+export interface HealthInsightsContext {
+  weightTrend?: { direction: "up" | "down" | "flat"; changeAmount: number; unit: string };
+  restingHeartRateTrend?: { direction: "up" | "down" | "flat"; current: number };
+  activityTrend?: { direction: "up" | "down" | "flat"; workoutsThisPeriod: number };
+  nutritionConsistencyPct?: number;
+  weekdayVsWeekendCalories?: { weekday: number; weekend: number };
+}
+
+export interface HealthInsights {
+  insights: string[]; // short, concrete observations — not paragraphs
+}
+
 /**
  * Every provider (Gemini, OpenAI, Claude) implements this interface so the rest
  * of the app never depends on a specific vendor SDK.
@@ -51,6 +63,9 @@ export interface AIProvider {
 
   /** Generate supportive, evidence-based coaching feedback from a summary of recent intake. */
   generateCoachFeedback(context: CoachPromptContext): Promise<CoachFeedback>;
+
+  /** Generate short, concrete observations for the Progress dashboard — weight/heart/activity/nutrition trends. */
+  generateHealthInsights(context: HealthInsightsContext): Promise<HealthInsights>;
 }
 
 export interface CoachPromptContext {

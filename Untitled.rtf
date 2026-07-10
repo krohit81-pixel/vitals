@@ -1,0 +1,309 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2870
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww25860\viewh12540\viewkind0
+\deftab720
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Goal\
+\
+Create a premium, Apple-quality health dashboard inspired by apps like HealthFit, Gentler Streak, Athlytic and Apple's own Health app.\
+\
+The UI should feel:\
+\
+Minimal\
+Premium\
+Modern\
+Lots of whitespace\
+Rounded cards\
+Smooth animations\
+Native iOS look\
+NOT cluttered\
+\
+I will provide screenshots of apps whose design language I like. Use them only as inspiration, not as copies.\
+\
+Data Source\
+\
+The user exports a weekly JSON from Apple Health (using HealthSave).\
+\
+Each import appends only new records into Supabase.\
+\
+No XML parsing.\
+\
+Data contains metrics such as:\
+\
+Weight\
+Steps\
+Walking Distance\
+Active Calories\
+Resting Heart Rate\
+Heart Rate\
+Heart Rate Variability (HRV)\
+Blood Oxygen\
+Flights Climbed\
+Workout sessions (if available)\
+Timestamp\
+Source device\
+\
+Design the system so adding future metrics is easy.\
+\
+Overall Layout\
+\
+The Progress page should answer one question:\
+\
+"How am I progressing?"\
+\
+Not simply display data.\
+\
+Use AI-generated insights wherever possible.\
+\
+Dashboard\
+\
+At the top show\
+\
+Good Morning Rohit\
+\
+Below it\
+\
+Today's Health Score\
+\
+Example\
+\
+82 / 100\
+\
+with a beautiful circular progress indicator.\
+\
+Underneath show\
+\
+\uc0\u9650  +4 from last week\
+\
+AI Insights Card\
+\
+Generate a natural language summary such as\
+\
+Weight is down 1.4 kg this month.\
+Resting heart rate continues to improve.\
+Your average daily activity has increased.\
+HRV is stable.\
+Consider increasing activity on weekends.\
+\
+This should feel like Whoop/Oura.\
+\
+Metric Cards\
+\
+Beautiful cards for\
+\
+Weight\
+\
+Current\
+Weekly change\
+Monthly change\
+Goal remaining\
+\
+Heart\
+\
+Resting HR\
+Average HR\
+HRV\
+Blood Oxygen\
+\
+Activity\
+\
+Daily Steps\
+Distance\
+Active Calories\
+Flights Climbed\
+\
+Each card should contain\
+\
+current value\
+trend arrow\
+sparkline\
+comparison versus last week\
+Charts\
+\
+Use modern smooth charts.\
+\
+Support\
+\
+7 Days\
+\
+30 Days\
+\
+90 Days\
+\
+1 Year\
+\
+Weight Screen\
+\
+Dedicated page\
+\
+Large weight chart\
+\
+Current weight\
+\
+Goal weight\
+\
+Projected goal date\
+\
+BMI\
+\
+Weekly averages\
+\
+Monthly averages\
+\
+Heart Screen\
+\
+Cards for\
+\
+Resting HR\
+\
+HRV\
+\
+Average HR\
+\
+Blood Oxygen\
+\
+Show trends and explain what improving or worsening means.\
+\
+Activity Screen\
+\
+Daily Steps\
+\
+Calories\
+\
+Distance\
+\
+Workouts\
+\
+Move streak\
+\
+Best day\
+\
+Least active day\
+\
+Weekly averages\
+\
+Trends\
+\
+Create a Trends page\
+\
+Examples\
+\
+Weight\
+\
+\uc0\u8595 \
+\
+1.8 kg\
+\
+Last 30 days\
+\
+Resting HR\
+\
+\uc0\u8595 \
+\
+6 bpm\
+\
+Average Steps\
+\
+\uc0\u8593 \
+\
+18%\
+\
+HRV\
+\
+\uc0\u8593 \
+\
+12%\
+\
+Use large Apple-style cards.\
+\
+Achievements\
+\
+Small section\
+\
+Examples\
+\
+10k steps 5 days\
+\
+Highest activity this month\
+\
+Weight goal halfway achieved\
+\
+New HRV personal best\
+\
+AI Coach\
+\
+Generate observations such as\
+\
+"Your activity has improved but weight is unchanged. Nutrition may be limiting progress."\
+\
+"Resting HR is improving while HRV is rising. Recovery appears good."\
+\
+"Average steps have dropped on weekends."\
+\
+This should be generated from imported data.\
+\
+Technical Requirements\
+\
+Next.js 15\
+\
+TypeScript\
+\
+Tailwind\
+\
+shadcn/ui\
+\
+Framer Motion\
+\
+Recharts\
+\
+Supabase\
+\
+Dark & Light Mode\
+\
+Responsive\
+\
+Follow the existing Vitals design system.\
+\
+Import Workflow\
+\
+Add an Import button.\
+\
+Workflow\
+\
+Import JSON\
+\
+\uc0\u8595 \
+\
+Validate\
+\
+\uc0\u8595 \
+\
+Append only new records\
+\
+\uc0\u8595 \
+\
+Recalculate daily summaries\
+\
+\uc0\u8595 \
+\
+Refresh dashboard\
+\
+Never duplicate records.\
+\
+Extensibility\
+\
+Design everything around a generic metric model so adding\
+\
+Sleep\
+Body Fat\
+VO\uc0\u8322  Max\
+Blood Pressure\
+Nutrition\
+Stress\
+\
+requires minimal code changes.\
+}

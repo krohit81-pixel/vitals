@@ -88,3 +88,26 @@ Write:
 
 Respond with ONLY valid JSON: { "summary": string, "recommendations": string[] }. No markdown fences.`;
 }
+
+export function buildHealthInsightsPrompt(context: {
+  weightTrend?: { direction: string; changeAmount: number; unit: string };
+  restingHeartRateTrend?: { direction: string; current: number };
+  activityTrend?: { direction: string; workoutsThisPeriod: number };
+  nutritionConsistencyPct?: number;
+  weekdayVsWeekendCalories?: { weekday: number; weekend: number };
+}) {
+  return `You are a health analytics assistant summarizing someone's recent trends across weight, heart rate, activity, and nutrition. Never diagnose, never give medical advice, never shame — just observe what the data shows, plainly and concisely.
+
+Data available this period:
+${context.weightTrend ? `- Weight: trending ${context.weightTrend.direction}, changed ${context.weightTrend.changeAmount} ${context.weightTrend.unit}` : ""}
+${context.restingHeartRateTrend ? `- Resting heart rate: trending ${context.restingHeartRateTrend.direction}, currently ${context.restingHeartRateTrend.current} bpm` : ""}
+${context.activityTrend ? `- Activity: trending ${context.activityTrend.direction}, ${context.activityTrend.workoutsThisPeriod} workouts logged` : ""}
+${context.nutritionConsistencyPct !== undefined ? `- Nutrition consistency: ${context.nutritionConsistencyPct}% of days hit target` : ""}
+${context.weekdayVsWeekendCalories ? `- Average calories: ${context.weekdayVsWeekendCalories.weekday} on weekdays vs ${context.weekdayVsWeekendCalories.weekend} on weekends` : ""}
+
+Only comment on dimensions that actually have data above — never invent or assume a metric that isn't listed.
+
+Write 2-4 short observations (one sentence each), each grounded in a specific number from above. No paragraphs, no filler, no "keep up the great work" filler — just what the data shows.
+
+Respond with ONLY valid JSON: { "insights": string[] }. No markdown fences.`;
+}

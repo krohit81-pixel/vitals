@@ -11,6 +11,19 @@
 
 export type ViewMode = "day" | "week" | "month";
 
+export type RangeOption = "7d" | "30d" | "90d" | "1y";
+
+export function rangeToDays(range: RangeOption): number {
+  return { "7d": 7, "30d": 30, "90d": 90, "1y": 365 }[range];
+}
+
+export const RANGE_LABELS: Record<RangeOption, string> = {
+  "7d": "7 Days",
+  "30d": "30 Days",
+  "90d": "90 Days",
+  "1y": "1 Year",
+};
+
 export function toDateString(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");

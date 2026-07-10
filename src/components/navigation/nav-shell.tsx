@@ -6,7 +6,15 @@ import { Sidebar } from "./sidebar";
 import { BottomNav } from "./bottom-nav";
 import { CaptureSheet } from "./capture-sheet";
 
-export function NavShell({ children }: { children: React.ReactNode }) {
+export function NavShell({
+  children,
+  previousWeight,
+  weightUnit,
+}: {
+  children: React.ReactNode;
+  previousWeight: number | null;
+  weightUnit: "kg" | "lb";
+}) {
   const [captureOpen, setCaptureOpen] = useState(false);
   const router = useRouter();
 
@@ -35,7 +43,13 @@ export function NavShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto max-w-2xl px-4 pt-6 md:px-8 md:pt-10">{children}</div>
       </main>
       <BottomNav onCapture={() => setCaptureOpen(true)} />
-      <CaptureSheet open={captureOpen} onClose={() => setCaptureOpen(false)} onSelect={handleSelect} />
+      <CaptureSheet
+        open={captureOpen}
+        onClose={() => setCaptureOpen(false)}
+        onSelect={handleSelect}
+        previousWeight={previousWeight}
+        weightUnit={weightUnit}
+      />
     </div>
   );
 }

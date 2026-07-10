@@ -146,6 +146,64 @@ alter table public.workout_logs drop constraint if exists workout_logs_health_de
 alter table public.workout_logs add constraint workout_logs_health_dedup
   unique (user_id, health_workout_id);
 
+-- Weight tracking. The Milestone 1 version of this table (weight_kg,
+-- body_fat_pct, photo_url, logged_at) was never wired to any UI or written
+-- to — confirmed via a full codebase search before doing this — so it's safe
+-- to drop and recreate with the shape this milestone actually needs, rather
+-- than fight CREATE TABLE IF NOT EXISTS silently skipping a column rename on
+-- a table that already exists.
+drop table if exists public.weight_logs cascade;
+
+-- Deliberately narrow (just weight) rather than a generic "body metrics"
+-- table — future metrics (body fat %, waist, muscle mass, etc.) get their own
+-- columns or their own table when they're actually built, per the same
+-- "don't design for hypothetical futures" principle used elsewhere. The JSON
+-- import below (health_metrics) already covers the truly open-ended case,
+-- since HealthSave/Health can export arbitrary metric types.
+create table public.weight_logs (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  weight numeric not null,
+  unit text check (unit in ('kg', 'lb')) not null default 'kg',
+  measured_at timestamptz not null default now(),
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Raw imported health readings (steps, heart rate, HRV, SpO2, etc.), from a
+-- manually-uploaded HealthSave JSON export — see the "Apple Health Import"
+-- design note in Milestone 4's brief for why this isn't a live sync. `metric`
+-- is plain text, not a check-constrained enum: the whole point is that new
+-- metric types (sleep, VO2 max, blood pressure, ...) can start flowing in
+-- the moment HealthSave/Health exports them, with zero migration required.
+create table if not exists public.health_metrics (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  metric text not null,
+  value numeric not null,
+  unit text not null,
+  source text not null,
+  recorded_at timestamptz not null, -- true absolute instant, for precise ordering
+  recorded_date date not null, -- literal wall-clock date the reading happened on;
+                                -- used for "steps per day" style aggregation, so it's
+                                -- not silently reinterpreted through some other
+                                -- timezone later (same bug class fixed elsewhere)
+  created_at timestamptz default now()
+);
+
+-- Dedup key for re-importing the same (or overlapping) export file — matches
+-- the exact shape HealthSave gives us per reading, so importing the same
+-- period twice is always a safe no-op.
+alter table public.health_metrics drop constraint if exists health_metrics_dedup;
+alter table public.health_metrics add constraint health_metrics_dedup
+  unique (user_id, metric, recorded_at, source);
+
+create index if not exists health_metrics_user_metric_date
+  on public.health_metrics (user_id, metric, recorded_date desc);
+create index if not exists health_metrics_user_metric_at
+  on public.health_metrics (user_id, metric, recorded_at desc);
+
 -- Row Level Security: every user can only touch their own rows
 alter table public.users enable row level security;
 alter table public.goals enable row level security;
@@ -156,6 +214,7 @@ alter table public.weight_logs enable row level security;
 alter table public.ai_feedback enable row level security;
 alter table public.settings enable row level security;
 alter table public.workout_logs enable row level security;
+alter table public.health_metrics enable row level security;
 
 do $$
 declare
@@ -163,7 +222,7 @@ declare
 begin
   for t in select unnest(array[
     'users','goals','meal_images','meal_logs',
-    'daily_totals','weight_logs','ai_feedback','settings','workout_logs'
+    'daily_totals','weight_logs','ai_feedback','settings','workout_logs','health_metrics'
   ])
   loop
     execute format($f$

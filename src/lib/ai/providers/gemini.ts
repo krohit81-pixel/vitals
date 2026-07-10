@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis } from "../types";
-import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt } from "../prompts";
+import type { AIProvider, CoachFeedback, CoachPromptContext, MealAnalysis, HealthInsights, HealthInsightsContext } from "../types";
+import { buildCoachPrompt, buildImageAnalysisPrompt, buildRefinementPrompt, buildTextAnalysisPrompt, buildHealthInsightsPrompt } from "../prompts";
 import { extractJson, toMealAnalysis } from "../json";
 
 const MODEL = "gemini-2.5-flash"; // gemini-2.0-flash was shut down by Google on June 1, 2026
@@ -51,5 +51,11 @@ export class GeminiProvider implements AIProvider {
     const result = await model.generateContent(buildCoachPrompt(context));
     const parsed = extractJson(result.response.text()) as CoachFeedback;
     return parsed;
+  }
+
+  async generateHealthInsights(context: HealthInsightsContext): Promise<HealthInsights> {
+    const model = getClient().getGenerativeModel({ model: MODEL });
+    const result = await model.generateContent(buildHealthInsightsPrompt(context));
+    return extractJson(result.response.text()) as HealthInsights;
   }
 }

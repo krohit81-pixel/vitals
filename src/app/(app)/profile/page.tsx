@@ -41,6 +41,20 @@ export default async function ProfilePage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Health Data</CardTitle>
+        </CardHeader>
+        <p className="mb-3 text-sm text-black/50 dark:text-white/50">
+          Import steps, heart rate, HRV, and workouts from a HealthSave export.
+        </p>
+        <Link href="/profile/health-import">
+          <Button variant="outline" className="w-full">
+            Import Health Data
+          </Button>
+        </Link>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Personal details</CardTitle>
         </CardHeader>
         <p className="text-sm text-black/50 dark:text-white/50">
