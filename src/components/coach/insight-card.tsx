@@ -1,25 +1,29 @@
 "use client";
 
 import { Line, LineChart, ResponsiveContainer } from "recharts";
-import type { LucideIcon } from "lucide-react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { TrendDirection } from "@/lib/nutrition/coach-insights";
 
-const TREND_ICONS: Record<TrendDirection, LucideIcon> = {
+const TREND_ICONS: Record<TrendDirection, typeof TrendingUp> = {
   up: TrendingUp,
   down: TrendingDown,
   flat: Minus,
 };
 
 export function InsightCard({
-  icon: Icon,
+  icon,
   label,
   headline,
   sparkline,
   color,
   trend,
 }: {
-  icon: LucideIcon;
+  /** Pre-rendered, e.g. <Beef size={14} style={{ color }} /> — a component
+   * *reference* (like the Beef import itself) can't be passed as a plain prop
+   * from a Server Component into this Client Component, only rendered JSX
+   * can. Same underlying rule as functions not being passable across that
+   * boundary, just for component types instead. */
+  icon: React.ReactNode;
   label: string;
   headline: string;
   sparkline: number[];
@@ -33,7 +37,7 @@ export function InsightCard({
     <div className="glass-card flex w-40 shrink-0 flex-col gap-2 p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ backgroundColor: `${color}22` }}>
-          <Icon size={14} style={{ color }} />
+          {icon}
         </div>
         {TrendIcon && <TrendIcon size={13} className="text-black/30 dark:text-white/30" />}
       </div>

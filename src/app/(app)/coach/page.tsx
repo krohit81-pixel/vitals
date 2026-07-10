@@ -100,14 +100,14 @@ export default async function CoachPage() {
         </h2>
         <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
           <InsightCard
-            icon={Beef}
+            icon={<Beef size={14} style={{ color: "#10B981" }} />}
             label="Protein"
             headline={`${consistencies.protein}% consistent`}
             sparkline={totals.map((t) => t.protein_g)}
             color="#10B981"
           />
           <InsightCard
-            icon={Leaf}
+            icon={<Leaf size={14} style={{ color: "#059669" }} />}
             label="Fibre"
             headline={fibreTrend === "up" ? "Trending up" : fibreTrend === "down" ? "Trending down" : "Holding steady"}
             sparkline={totals.map((t) => t.fibre_g)}
@@ -115,14 +115,14 @@ export default async function CoachPage() {
             trend={fibreTrend}
           />
           <InsightCard
-            icon={Flame}
+            icon={<Flame size={14} style={{ color: statusColor }} />}
             label="Net Calories"
             headline={`${Math.round(avgNet).toLocaleString()} avg/day`}
             sparkline={netCalories}
             color={statusColor}
           />
           <InsightCard
-            icon={Dumbbell}
+            icon={<Dumbbell size={14} style={{ color: "#3B82F6" }} />}
             label="Activity"
             headline={`${totalWorkouts} workout${totalWorkouts === 1 ? "" : "s"} this week`}
             sparkline={workoutTotals.map((w) => w.caloriesBurned)}

@@ -8,13 +8,10 @@ export type StreakDisplayState = "hit" | "miss" | "pending" | "future";
 /**
  * A day counts as a "hit" if something was actually logged (otherwise an
  * empty day would trivially pass) and net calories (consumed − burned) stayed
- * at or under target, with a small 5% tolerance so a slightly-over day
- * doesn't feel punishing — this is meant to motivate, not gatekeep.
- *
- * This is computed for every day in the requested range, including today —
- * but "today" isn't actually finished yet, so callers must not treat its
- * `hit` value as final. See classifyStreakDay(), which is what decides what
- * to actually show for each day.
+ * at or under target — the same exact definition the calorie ring uses for
+ * its over/under state, so the two don't disagree with each other. No grace
+ * margin: even a small overage is a miss, matching the ring turning red the
+ * moment you cross target.
  */
 export function computeStreakDays(
   days: Array<{ date: string; calories: number; caloriesBurned: number }>,
@@ -23,7 +20,7 @@ export function computeStreakDays(
   return days.map((d) => {
     const hasData = d.calories > 0;
     const net = d.calories - d.caloriesBurned;
-    const withinBudget = net <= calorieTarget * 1.05;
+    const withinBudget = net <= calorieTarget;
     return { date: d.date, hit: hasData && withinBudget };
   });
 }
