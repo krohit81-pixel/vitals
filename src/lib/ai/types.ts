@@ -23,7 +23,10 @@ export interface MealAnalysis {
     sodiumMg: number;
   };
   overallConfidence: number; // 0-1
-  clarifyingQuestions: Array<{ id: string; question: string }>; // asked when confidence < 0.8
+  // Each question carries its own answer options (2-4 short choices) rather
+  // than assuming every ambiguity is yes/no — "Does this contain water or
+  // milk?" needs "Water" / "Milk" / "Both", not a tick/cross.
+  clarifyingQuestions: Array<{ id: string; question: string; options: string[] }>;
   explanation: string; // plain-language "estimated as: ..." summary
 }
 
@@ -58,7 +61,7 @@ export interface AIProvider {
   /** Re-run estimation after the user answers low-confidence clarifying questions. */
   refineMealAnalysis(
     previous: MealAnalysis,
-    answers: Array<{ question: string; answer: "yes" | "no" }>
+    answers: Array<{ question: string; answer: string }>
   ): Promise<MealAnalysis>;
 
   /** Generate supportive, evidence-based coaching feedback from a summary of recent intake. */

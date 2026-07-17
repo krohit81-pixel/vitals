@@ -65,7 +65,7 @@ export function NewMealFlow() {
     void source; // source is persisted at save time via `mode`
   };
 
-  const handleClarify = async (answers: Array<{ question: string; answer: "yes" | "no" }>) => {
+  const handleClarify = async (answers: Array<{ question: string; answer: string }>) => {
     if (!analysis) return;
     setStatus("refining");
     try {

@@ -32,7 +32,7 @@ export async function analyzeMealTextAction(description: string): Promise<MealAn
 
 export async function refineWithClarificationAction(
   previous: MealAnalysis,
-  answers: Array<{ question: string; answer: "yes" | "no" }>
+  answers: Array<{ question: string; answer: string }>
 ): Promise<MealAnalysis> {
   await requireUser();
   return getAIProvider().refineMealAnalysis(previous, answers);

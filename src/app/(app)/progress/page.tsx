@@ -7,14 +7,12 @@ import { HealthScoreRing } from "@/components/progress/health-score-ring";
 import { RangeSelector } from "@/components/progress/range-selector";
 import { OverviewCard } from "@/components/progress/overview-card";
 import { MiniRing } from "@/components/progress/mini-ring";
-import { MiniMacroDonut } from "@/components/progress/mini-macro-donut";
 import { HealthInsightsCard } from "./health-insights";
 import { HealthInsightsSkeleton } from "./health-insights-skeleton";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
 import { getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
 import { getDailyMetricSeries, summarizeSeries } from "@/lib/nutrition/get-health-metrics";
 import { calcWeekConsistencies, calcRhythmScore, trendDirection } from "@/lib/nutrition/coach-insights";
-import { average } from "@/lib/nutrition/consistency";
 import { computeStreakDays, currentStreakLength } from "@/lib/nutrition/streak";
 import { computeAchievements } from "@/lib/nutrition/achievements";
 import { addDays, rangeToDays, parseDateString, type RangeOption } from "@/lib/nutrition/date";
@@ -139,11 +137,6 @@ export default async function ProgressPage({
     maxWorkoutsInAWeek: totalWorkouts,
   });
 
-  const stepsConsistencyPct = stepsStats.average > 0 ? Math.min((stepsStats.average / 8000) * 100, 100) : 0;
-  const avgFatG = average(totals.map((t) => t.fat_g));
-  const avgCarbsG = average(totals.map((t) => t.carbs_g));
-  const avgProteinG = average(totals.map((t) => t.protein_g));
-
   return (
     <div className="animate-fade-up space-y-6 pb-8">
       <header className="flex items-start justify-between">
@@ -206,7 +199,6 @@ export default async function ProgressPage({
           unit="steps/day"
           comparisonLabel={`${totalWorkouts} workout${totalWorkouts === 1 ? "" : "s"}`}
           comparisonDirection="flat"
-          visual={<MiniRing percent={stepsConsistencyPct} color="#F59E0B" />}
           color="#F59E0B"
           href="/progress/metric/step_count"
         />
@@ -215,9 +207,8 @@ export default async function ProgressPage({
           icon={<Apple size={14} style={{ color: "#10B981" }} />}
           value={`${consistencies.protein}%`}
           unit="protein"
-          comparisonLabel={`${consistencies.calories}% calories on target`}
+          comparisonLabel={`${consistencies.calories}% of days on calorie target`}
           comparisonDirection="flat"
-          visual={<MiniMacroDonut fatG={avgFatG} carbsG={avgCarbsG} proteinG={avgProteinG} />}
           color="#10B981"
           href="/progress/nutrition"
         />

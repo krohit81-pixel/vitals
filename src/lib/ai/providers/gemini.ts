@@ -33,7 +33,7 @@ export class GeminiProvider implements AIProvider {
 
   async refineMealAnalysis(
     previous: MealAnalysis,
-    answers: Array<{ question: string; answer: "yes" | "no" }>
+    answers: Array<{ question: string; answer: string }>
   ): Promise<MealAnalysis> {
     const model = getClient().getGenerativeModel({ model: MODEL });
     const prompt = buildRefinementPrompt(

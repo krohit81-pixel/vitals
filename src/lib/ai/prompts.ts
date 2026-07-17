@@ -14,7 +14,9 @@ export const MEAL_ANALYSIS_JSON_SHAPE = `{
     }
   ],
   "overallConfidence": number, // 0-1, weighted average across items
-  "clarifyingQuestions": [ { "id": string, "question": string } ], // only if overallConfidence < 0.8
+  "clarifyingQuestions": [
+    { "id": string, "question": string, "options": string[] } // 2-4 short, concrete answer choices — NOT always "Yes"/"No". Pick options that actually fit the ambiguity: e.g. for "Does this protein shake contain water or milk?" use ["Water", "Milk", "Both", "Neither"], not a yes/no toggle. Only use ["Yes", "No"] when the question genuinely is binary, e.g. "Is this decaf?".
+  ], // only if overallConfidence < 0.8
   "explanation": string // one short sentence, plain language, e.g. "Estimated as 2 eggs, whole wheat toast, butter, and black coffee."
 }`;
 
@@ -24,7 +26,7 @@ export function buildImageAnalysisPrompt() {
 Rules:
 - Estimate calories, protein, carbs, fat, fibre, sugar, and sodium per item, using realistic portion sizes based on visual cues (plate size, utensils, etc).
 - Give each item its own confidence score (0-1) based on how certain you are of its identity and portion.
-- If your overall confidence is below 0.8, include 1-3 short yes/no clarifying questions that would most improve accuracy (e.g. "Is this grilled or fried chicken?").
+- If your overall confidence is below 0.8, include 1-3 short clarifying questions that would most improve accuracy, each with 2-4 concrete answer options that actually match the ambiguity — e.g. "Does this contain water or milk?" needs options like ["Water", "Milk", "Both"], not a yes/no toggle. Only use yes/no options when the question is genuinely binary (e.g. "Is this decaf?").
 - Do not include any text outside the JSON object.
 - Respond with ONLY valid JSON matching exactly this shape, no markdown fences:
 
@@ -41,7 +43,7 @@ Identify every distinct food item mentioned (accounting for regional dishes, e.g
 Rules:
 - If quantity isn't stated, assume one typical serving.
 - Give each item a confidence score (0-1).
-- If overall confidence is below 0.8, include 1-3 short clarifying questions.
+- If overall confidence is below 0.8, include 1-3 short clarifying questions, each with 2-4 concrete answer options matching the actual ambiguity (not a default yes/no).
 - Respond with ONLY valid JSON matching exactly this shape, no markdown fences:
 
 ${MEAL_ANALYSIS_JSON_SHAPE}`;
@@ -50,7 +52,7 @@ ${MEAL_ANALYSIS_JSON_SHAPE}`;
 export function buildRefinementPrompt(
   previousExplanation: string,
   items: Array<{ name: string; estimatedQuantity: string }>,
-  answers: Array<{ question: string; answer: "yes" | "no" }>
+  answers: Array<{ question: string; answer: string }>
 ) {
   return `You previously estimated a meal as: ${previousExplanation}
 

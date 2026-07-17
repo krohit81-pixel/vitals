@@ -15,7 +15,7 @@ export function extractJson(raw: string): unknown {
 export function toMealAnalysis(parsed: {
   items: DetectedFoodItem[];
   overallConfidence: number;
-  clarifyingQuestions?: Array<{ id: string; question: string }>;
+  clarifyingQuestions?: Array<{ id: string; question: string; options?: string[] }>;
   explanation: string;
 }): MealAnalysis {
   const totals = parsed.items.reduce(
@@ -35,7 +35,13 @@ export function toMealAnalysis(parsed: {
     items: parsed.items,
     totals,
     overallConfidence: parsed.overallConfidence,
-    clarifyingQuestions: parsed.clarifyingQuestions ?? [],
+    // Defensive fallback only — the prompt requires options, but if a
+    // provider ever omits them, default to Yes/No rather than rendering a
+    // question with no way to answer it.
+    clarifyingQuestions: (parsed.clarifyingQuestions ?? []).map((q) => ({
+      ...q,
+      options: q.options && q.options.length > 0 ? q.options : ["Yes", "No"],
+    })),
     explanation: parsed.explanation,
   };
 }

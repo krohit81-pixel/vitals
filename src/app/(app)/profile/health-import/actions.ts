@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isValidExport, parseHealthExport } from "@/lib/nutrition/health-import";
+import { isValidExport, parseHealthExport, isLikelyDuplicateOfManual } from "@/lib/nutrition/health-import";
 
 const CHUNK_SIZE = 500;
 
@@ -16,6 +16,7 @@ export interface ImportResult {
   error?: string;
   metricsImported?: number;
   workoutsImported?: number;
+  duplicatesSkipped?: number;
   skipped?: number;
 }
 
@@ -40,7 +41,46 @@ export async function importHealthDataAction(_prev: ImportResult, formData: Form
     return { error: "That JSON doesn't look like a HealthSave export (expected date/metric/value/unit/source fields)." };
   }
 
-  const { metricRows, workouts, skippedCount } = parseHealthExport(raw);
+  // Captured client-side (see page.tsx) via Intl.DateTimeFormat().resolvedOptions().timeZone —
+  // the server has no way to know the viewer's actual timezone otherwise.
+  // HealthSave's timestamps are genuinely UTC, so this is required to convert
+  // them to the correct local date/time rather than misreading UTC digits as
+  // if they were already local (the bug this fixes).
+  const timeZone = String(formData.get("timeZone") || "UTC");
+
+  const { metricRows, workouts, skippedCount } = parseHealthExport(raw, timeZone);
+
+  // Cross-source duplicate check: the health_workout_id dedup constraint only
+  // catches re-importing the same export twice — it can't recognize that an
+  // imported workout and an already-existing *manual* entry describe the same
+  // real session, since the manual one has no health_workout_id at all. Fetch
+  // the user's manual entries on the dates this import touches, and skip
+  // importing anything that looks like a match (see isLikelyDuplicateOfManual
+  // for the exact tolerances).
+  const importDates = [...new Set(workouts.map((w) => w.date))];
+  const { data: manualWorkouts } =
+    importDates.length > 0
+      ? await supabase
+          .from("workout_logs")
+          .select("date, start_time, workout_type, duration_minutes")
+          .eq("user_id", user.id)
+          .eq("source", "manual")
+          .in("date", importDates)
+      : { data: [] };
+
+  let duplicatesSkipped = 0;
+  const workoutsToImport = workouts.filter((w) => {
+    const isDuplicate = (manualWorkouts ?? []).some((m) =>
+      isLikelyDuplicateOfManual(w, {
+        date: m.date,
+        startTime: m.start_time.slice(0, 5),
+        workoutType: m.workout_type,
+        durationMinutes: m.duration_minutes,
+      })
+    );
+    if (isDuplicate) duplicatesSkipped++;
+    return !isDuplicate;
+  });
 
   let metricsImported = 0;
   for (const batch of chunk(metricRows, CHUNK_SIZE)) {
@@ -62,7 +102,7 @@ export async function importHealthDataAction(_prev: ImportResult, formData: Form
   }
 
   let workoutsImported = 0;
-  for (const batch of chunk(workouts, CHUNK_SIZE)) {
+  for (const batch of chunk(workoutsToImport, CHUNK_SIZE)) {
     const { error, count } = await supabase
       .from("workout_logs")
       .upsert(
@@ -85,5 +125,5 @@ export async function importHealthDataAction(_prev: ImportResult, formData: Form
   revalidatePath("/dashboard");
   revalidatePath("/meals");
 
-  return { metricsImported, workoutsImported, skipped: skippedCount };
+  return { metricsImported, workoutsImported, duplicatesSkipped, skipped: skippedCount };
 }

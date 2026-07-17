@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft, UploadCloud, CheckCircle2 } from "lucide-react";
@@ -22,6 +22,14 @@ function SubmitButton() {
 export default function HealthImportPage() {
   const [state, formAction] = useActionState(importHealthDataAction, initialState);
 
+  // HealthSave's timestamps are genuinely UTC — the server has no way to know
+  // what timezone to convert them to, so the browser has to tell it. Read
+  // once on mount; by the time a real submit can happen, this is already set.
+  const [timeZone, setTimeZone] = useState("");
+  useEffect(() => {
+    setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  }, []);
+
   return (
     <div className="space-y-5 pb-8">
       <div className="flex items-center gap-3">
@@ -41,6 +49,8 @@ export default function HealthImportPage() {
       </Card>
 
       <form action={formAction} className="glass-card-solid space-y-4 p-5">
+        <input type="hidden" name="timeZone" value={timeZone} />
+
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-emerald-500/30 bg-emerald-50 py-10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
           <UploadCloud size={26} />
           <span className="text-sm font-medium">Choose HealthSave export (.json)</span>
@@ -55,6 +65,7 @@ export default function HealthImportPage() {
             <p className="text-sm text-black/70 dark:text-white/70">
               Imported <strong>{state.metricsImported}</strong> readings and{" "}
               <strong>{state.workoutsImported}</strong> workouts.
+              {state.duplicatesSkipped ? ` ${state.duplicatesSkipped} workout${state.duplicatesSkipped === 1 ? "" : "s"} matched something you'd already logged manually, so ${state.duplicatesSkipped === 1 ? "it wasn't" : "they weren't"} duplicated.` : ""}
               {state.skipped ? ` ${state.skipped} rows couldn't be read and were skipped.` : ""}
             </p>
           </Card>

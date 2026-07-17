@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Check, X } from "lucide-react";
 import type { MealAnalysis } from "@/lib/ai/types";
 import { MEAL_TYPE_LABELS, type MealType } from "@/lib/nutrition/meal-type";
 import { Button } from "@/components/ui/button";
@@ -20,12 +19,15 @@ export function MealReview({
   analysis: MealAnalysis;
   mealType: MealType;
   onMealTypeChange: (type: MealType) => void;
-  onClarify: (answers: Array<{ question: string; answer: "yes" | "no" }>) => void;
+  onClarify: (answers: Array<{ question: string; answer: string }>) => void;
   onSave: () => void;
   refining: boolean;
   saving: boolean;
 }) {
-  const [answers, setAnswers] = useState<Record<string, "yes" | "no">>({});
+  // Selected option text per question id — e.g. { "q1": "Milk" } — not a
+  // binary yes/no, since a question like "Does this contain water or milk?"
+  // has no honest yes/no answer.
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const needsClarification = analysis.overallConfidence < 0.8 && analysis.clarifyingQuestions.length > 0;
   const allAnswered =
@@ -72,29 +74,28 @@ export function MealReview({
         <p className="text-sm text-black/70 dark:text-white/70">{analysis.explanation}</p>
       </Card>
 
-      {/* Clarification chips */}
+      {/* Clarification chips — each question shows its own real answer
+          options (2-4 short choices), not a forced yes/no toggle. */}
       {needsClarification && (
         <Card>
           <p className="mb-3 text-sm font-medium">A couple of quick questions:</p>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {analysis.clarifyingQuestions.map((q) => (
-              <div key={q.id} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-black/70 dark:text-white/70">{q.question}</span>
-                <div className="flex shrink-0 gap-1.5">
-                  {(["yes", "no"] as const).map((option) => (
+              <div key={q.id}>
+                <p className="mb-2 text-sm text-black/70 dark:text-white/70">{q.question}</p>
+                <div className="flex flex-wrap gap-2">
+                  {q.options.map((option) => (
                     <button
                       key={option}
                       onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: option }))}
                       className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full border text-xs font-medium",
+                        "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
                         answers[q.id] === option
-                          ? option === "yes"
-                            ? "border-emerald-500 bg-emerald-500 text-white"
-                            : "border-red-400 bg-red-400 text-white"
-                          : "border-black/10 text-black/50 dark:border-white/15 dark:text-white/50"
+                          ? "border-emerald-500 bg-emerald-500 text-white"
+                          : "border-black/10 text-black/60 hover:bg-black/[0.03] dark:border-white/15 dark:text-white/60"
                       )}
                     >
-                      {option === "yes" ? <Check size={14} /> : <X size={14} />}
+                      {option}
                     </button>
                   ))}
                 </div>
@@ -110,7 +111,7 @@ export function MealReview({
               onClarify(
                 analysis.clarifyingQuestions.map((q) => ({
                   question: q.question,
-                  answer: answers[q.id] as "yes" | "no",
+                  answer: answers[q.id]!,
                 }))
               )
             }

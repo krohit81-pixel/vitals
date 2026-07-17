@@ -49,7 +49,7 @@ export class OpenAIProvider implements AIProvider {
 
   async refineMealAnalysis(
     previous: MealAnalysis,
-    answers: Array<{ question: string; answer: "yes" | "no" }>
+    answers: Array<{ question: string; answer: string }>
   ): Promise<MealAnalysis> {
     const prompt = buildRefinementPrompt(
       previous.explanation,

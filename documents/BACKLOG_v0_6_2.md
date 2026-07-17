@@ -3,38 +3,51 @@
 Items mentioned as "later"/"future" during development, kept here so they don't get lost.
 Not yet built. Move items into an actual milestone/version when ready to build.
 
-## Shipped in v0.6.2
+## v0.6.2 (not yet built — requirements only)
 
-- **Clarifying questions now show real answer options, not forced Yes/No.** Root cause:
-  the AI prompt itself told the model to generate "yes/no clarifying questions," and the
-  UI hardcoded a Yes/No toggle regardless of what the question actually needed — so
-  "Does this protein shake contain water or milk?" got a tick/cross that made no sense.
-  Fixed end-to-end: prompt now asks for 2-4 concrete options per question (only defaulting
-  to Yes/No when a question is genuinely binary), the JSON schema carries those options,
-  and the UI renders whatever options the model actually returned as selectable chips.
-- **Activity/Nutrition ring visuals removed** — after two attempts at fixing the overflow,
-  removed them entirely per direct instruction rather than attempt a third fix. Both
-  cards are text-only now, matching Weight and Heart.
-- **"57% calories on target" reworded** to "57% of days on calorie target" — same
-  underlying number, clearer sentence structure about what it actually measures.
-- **Insights card redesigned** — each insight now renders as its own row with a
-  topic-matched icon and accent color (heart/activity/weight/nutrition, matched via
-  lightweight keyword detection on the insight text) instead of plain stacked paragraphs.
-- **Cross-source workout duplicate detection** — imports now check the user's existing
-  *manually*-logged workouts (not just previously-imported ones) before inserting, and
-  skip anything that looks like the same real session: same day, start time within an
-  hour, compatible type, similar duration. Verified against 6 hand-written test cases
-  covering true positives, different-day, same-day-different-workout, wildly-different-
-  duration, and type-mismatch scenarios — all passed as expected.
-- **Fixed the actual timezone bug** (confirmed via testing, not just theorized): HealthSave
-  exports timestamps with a `Z` suffix — genuinely UTC — but the import parser was
-  extracting the literal digits as if they were already local time. Now captures the
-  viewer's real IANA timezone client-side and does an actual UTC→local conversion.
-  Verified against a constructed case that crosses a day boundary (a UTC timestamp that
-  should roll into the *next* local day in India) — confirmed the old logic would have
-  gotten it wrong and the new logic gets it right. Re-ran against your actual uploaded
-  export: the Elliptical workout's time corrected from a wrong "13:01" to the accurate
-  "18:31" IST — over 5 hours off before this fix.
+- **Remove the Activity/Nutrition ring/donut visuals entirely.** The previous fix
+  (bounding them as small SVG rings instead of recharts sparklines) still isn't
+  rendering cleanly — the ring/donut is visually clipped by the card edge in testing.
+  Rather than attempt a third visual fix, just drop the chart from these two overview
+  cards and keep them text-only (matching what Weight already does). Heart already has
+  no chart for the same "don't force a visual where there isn't a clean one" reasoning —
+  extend that same call to Activity and Nutrition.
+- **Drop or rewrite the "57% calories on target" subtext on the Nutrition card** — it
+  reads as confusing/unclear in practice. Needs either clearer copy (what does the
+  percentage actually mean at a glance?) or removal in favor of something more legible.
+- **Redesign the Insights card** — currently plain stacked paragraphs, reads as flat/
+  boring. Wants: bullet points, and a more visually attractive treatment overall (icons
+  per insight line? subtle accent per insight type — heart/activity/nutrition — rather
+  than uniform text? worth a proper visual pass, not just adding literal bullet
+  characters).
+- **Cross-source duplicate detection between manual and imported workouts.** Current
+  dedup (`workout_logs_health_dedup`, keyed on `health_workout_id`) only prevents
+  re-importing the *same* HealthSave export twice — it has no way to recognize that an
+  *imported* workout and a *manually-logged* workout represent the same real-world
+  session, since the manual one has no `health_workout_id` to match against. Confirmed
+  as a real problem: importing created duplicates of workouts already logged by hand,
+  requiring manual cleanup. Needs a fuzzy-match design before building — e.g. same date,
+  overlapping time window (± some tolerance), same or compatible workout type, similar
+  duration/calories — and a decision on behavior when a likely match is found: silently
+  skip the import, merge/upgrade the manual entry's metadata, or surface a "possible
+  duplicate, review?" step rather than guessing automatically (silent auto-skip risks
+  wrongly dropping a legitimately separate second workout on the same day).
+
+- **Real bug, root cause already identified: imported workout/health-metric timestamps
+  are off by a timezone shift (effectively showing GMT/UTC instead of local time).**
+  HealthSave exports timestamps with a `Z` suffix — genuinely UTC, e.g.
+  `"2026-07-06T13:01:16Z"`. The import parser's `wallClock()` helper
+  (`health-import.ts`) extracts the literal digits from that string as if they were
+  already local wall-clock time — correct for timestamps *this app* generates (which are
+  already local when created), but wrong for HealthSave's data, which needs an actual
+  UTC→local conversion first. Proper fix needs the viewer's IANA timezone (e.g.
+  captured client-side via `Intl.DateTimeFormat().resolvedOptions().timeZone` at upload
+  time, sent alongside the file) and real timezone-aware conversion before extracting
+  date/time — not digit extraction. This is the same underlying gap as the "day
+  boundary" limitation already flagged earlier in this file (no stored user timezone
+  anywhere in the app) — worth fixing both together rather than separately, since a
+  stored timezone would resolve this import bug *and* the day-boundary edge case in one
+  pass.
 
 ## Shipped in v0.4
 
