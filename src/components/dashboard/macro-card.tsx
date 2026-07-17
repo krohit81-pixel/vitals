@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function MacroCard({
   icon: Icon,
@@ -7,37 +6,54 @@ export function MacroCard({
   current,
   target,
   unit,
-  colorClass = "bg-emerald-500",
+  color = "#10B981",
 }: {
   icon: LucideIcon;
   label: string;
   current: number;
   target: number;
   unit: string;
-  colorClass?: string;
+  /** Hex color — drives the icon, the fill, and the slider thumb together,
+   * so a metric's color is fully consistent instead of the icon defaulting
+   * to one fixed color regardless of which metric it's on. */
+  color?: string;
 }) {
   const pct = Math.min((current / target) * 100, 100);
 
   return (
     <div className="glass-card flex flex-col gap-3 p-4">
       <div className="flex items-center gap-2">
-        <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", colorClass, "bg-opacity-15")}>
-          <Icon size={16} className="text-emerald-600 dark:text-emerald-400" />
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${color}1F` }}
+        >
+          <Icon size={16} style={{ color }} />
         </div>
         <span className="text-sm font-medium">{label}</span>
       </div>
 
-      <div className="h-2 w-full overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.08]">
+      <p className="font-display text-2xl font-bold tabular-nums text-ink dark:text-cream-100">
+        {current.toLocaleString()}
+        <span className="ml-1 text-xs font-normal text-black/40 dark:text-white/40">{unit}</span>
+      </p>
+
+      {/* Slider-style progress: a track, a colored fill, and a round thumb
+          marking exactly where "current" sits — reads more like a live
+          instrument than a plain static bar. */}
+      <div className="relative h-2 w-full rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
         <div
-          className={cn("h-full rounded-full transition-all duration-700", colorClass)}
-          style={{ width: `${pct}%` }}
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
+        <div
+          className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_1px_4px_rgba(0,0,0,0.25)] transition-all duration-700 dark:border-graphite-50"
+          style={{ left: `calc(${pct}% - 7px)`, backgroundColor: color }}
         />
       </div>
 
-      <div className="flex items-baseline gap-1 text-xs text-black/50 dark:text-white/50">
-        <span className="font-semibold text-ink dark:text-cream-100">{current}</span>
-        <span>/ {target}{unit}</span>
-      </div>
+      <p className="text-[11px] text-black/40 dark:text-white/40">
+        Target: {target.toLocaleString()}{unit}
+      </p>
     </div>
   );
 }

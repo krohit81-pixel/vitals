@@ -204,11 +204,6 @@ create index if not exists health_metrics_user_metric_date
 create index if not exists health_metrics_user_metric_at
   on public.health_metrics (user_id, metric, recorded_at desc);
 
--- Auto-provision public.users + public.goals whenever someone signs up.
--- SECURITY DEFINER lets this run as the table owner, bypassing RLS — so it
--- works regardless of whether the client has an active session yet (e.g.
--- during email-confirmation flows), unlike a client-side insert right after
--- signUp(), which can silently fail RLS if no session exists yet.
 -- Quick-add phrases shown as chips on the Manual Entry screen (e.g. "Dal
 -- rice") — user-managed reference data, edited from Profile → Meal Shortcuts.
 create table if not exists public.meal_shortcuts (
@@ -266,8 +261,11 @@ drop policy if exists "meal_photos_owner_access" on storage.objects;
 create policy "meal_photos_owner_access" on storage.objects
   for all using (bucket_id = 'meal-photos' and auth.uid()::text = (storage.foldername(name))[1]);
 
-
-
+-- Auto-provision public.users + public.goals whenever someone signs up.
+-- SECURITY DEFINER lets this run as the table owner, bypassing RLS — so it
+-- works regardless of whether the client has an active session yet (e.g.
+-- during email-confirmation flows), unlike a client-side insert right after
+-- signUp(), which can silently fail RLS if no session exists yet.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql

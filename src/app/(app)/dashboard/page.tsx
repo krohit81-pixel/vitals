@@ -189,11 +189,11 @@ async function DayView({
       <StreakCard days={streakDays} />
 
       <section className="grid grid-cols-2 gap-3">
-        <MacroCard icon={Beef} label="Protein" current={Math.round(totals.protein_g)} target={goals.protein_target_g} unit="g" />
-        <MacroCard icon={Wheat} label="Carbs" current={Math.round(totals.carbs_g)} target={goals.carb_target_g} unit="g" colorClass="bg-sky-500" />
-        <MacroCard icon={Droplet} label="Fat" current={Math.round(totals.fat_g)} target={goals.fat_target_g} unit="g" colorClass="bg-amber-500" />
-        <MacroCard icon={Leaf} label="Fibre" current={Math.round(totals.fibre_g)} target={goals.fibre_target_g} unit="g" />
-        <MacroCard icon={Droplets} label="Water" current={Math.round(totals.water_ml)} target={goals.water_target_ml} unit="ml" colorClass="bg-sky-500" />
+        <MacroCard icon={Beef} label="Protein" current={Math.round(totals.protein_g)} target={goals.protein_target_g} unit="g" color="#8B5CF6" />
+        <MacroCard icon={Wheat} label="Carbs" current={Math.round(totals.carbs_g)} target={goals.carb_target_g} unit="g" color="#3B82F6" />
+        <MacroCard icon={Droplet} label="Fat" current={Math.round(totals.fat_g)} target={goals.fat_target_g} unit="g" color="#F59E0B" />
+        <MacroCard icon={Leaf} label="Fibre" current={Math.round(totals.fibre_g)} target={goals.fibre_target_g} unit="g" color="#10B981" />
+        <MacroCard icon={Droplets} label="Water" current={Math.round(totals.water_ml)} target={goals.water_target_ml} unit="ml" color="#06B6D4" />
       </section>
 
       <section>

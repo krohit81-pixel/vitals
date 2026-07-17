@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, X, Flame } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { localTodayString, parseDateString } from "@/lib/nutrition/date";
-import { classifyStreakDay, currentStreakLength, type StreakDay } from "@/lib/nutrition/streak";
+import { classifyStreakDay, type StreakDay } from "@/lib/nutrition/streak";
 import { cn } from "@/lib/utils";
 
 export function StreakCard({ days }: { days: StreakDay[] }) {
@@ -17,8 +17,6 @@ export function StreakCard({ days }: { days: StreakDay[] }) {
     setToday(localTodayString());
   }, []);
 
-  const streak = today ? currentStreakLength(days, today) : 0;
-
   return (
     <Card className="flex items-center gap-4">
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-400/15">
@@ -26,10 +24,7 @@ export function StreakCard({ days }: { days: StreakDay[] }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="font-display text-base font-semibold text-ink dark:text-cream-100">
-          {streak > 0 ? `${streak} day${streak === 1 ? "" : "s"} streak` : "Start a streak"}
-        </p>
-        <div className="mt-2 flex gap-1.5">
+        <div className="flex gap-1.5">
           {days.map((d) => {
             const label = parseDateString(d.date).toLocaleDateString(undefined, { weekday: "narrow" });
             const state = today ? classifyStreakDay(d, today) : "pending";

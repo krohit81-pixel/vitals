@@ -28,16 +28,24 @@ export function CalorieRing({
   const pct = Math.min(consumed / adjustedTarget, 1);
 
   const size = 236;
-  const stroke = 20;
+  const stroke = 22;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
 
   const statusColor = isOver ? "#EF4444" : isApproaching ? "#F59E0B" : null; // null = normal gradient
+  const thumbColor = statusColor ?? "#10B981";
   const remainingChipClass = isOver
     ? "bg-red-400/15 text-red-500"
     : isApproaching
       ? "bg-amber-400/15 text-amber-500"
       : "bg-emerald-400/15 text-emerald-500";
+
+  // Thumb position — same raw (pre-rotation) coordinate space the stroke-
+  // dasharray arc is drawn in, so a dot placed here lands exactly on the
+  // visible arc's end once the shared -rotate-90 is applied to the whole SVG.
+  const thumbAngle = pct * 2 * Math.PI;
+  const thumbX = size / 2 + radius * Math.cos(thumbAngle);
+  const thumbY = size / 2 + radius * Math.sin(thumbAngle);
 
   return (
     <div className="flex flex-col items-center py-2">
@@ -50,17 +58,17 @@ export function CalorieRing({
           className={cn(
             "-rotate-90",
             isOver
-              ? "drop-shadow-[0_4px_16px_rgba(239,68,68,0.3)]"
+              ? "drop-shadow-[0_6px_20px_rgba(239,68,68,0.4)]"
               : isApproaching
-                ? "drop-shadow-[0_4px_16px_rgba(245,158,11,0.3)]"
-                : "drop-shadow-[0_4px_16px_rgba(16,185,129,0.25)]"
+                ? "drop-shadow-[0_6px_20px_rgba(245,158,11,0.4)]"
+                : "drop-shadow-[0_6px_24px_rgba(16,185,129,0.4)]"
           )}
         >
           <defs>
             <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#6EE7B7" />
-              <stop offset="55%" stopColor="#10B981" />
-              <stop offset="100%" stopColor="#047857" />
+              <stop offset="0%" stopColor="#4ADE80" />
+              <stop offset="50%" stopColor="#10B981" />
+              <stop offset="100%" stopColor="#0EA5E9" />
             </linearGradient>
           </defs>
 
@@ -84,11 +92,24 @@ export function CalorieRing({
             animate={{ strokeDashoffset: circumference * (1 - pct) }}
             transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
           />
+          {pct > 0.02 && (
+            <motion.circle
+              r={9}
+              fill={thumbColor}
+              stroke="white"
+              strokeWidth={2.5}
+              className="dark:stroke-graphite-50"
+              initial={{ cx: size / 2 + radius, cy: size / 2 }}
+              animate={{ cx: thumbX, cy: thumbY }}
+              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+              style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.3))" }}
+            />
+          )}
         </svg>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
           <span
-            className="font-display text-[2.75rem] leading-none font-bold tabular-nums"
+            className="font-display text-[3rem] leading-none font-extrabold tabular-nums"
             style={{ color: statusColor ?? undefined }}
           >
             {displayValue.toLocaleString()}

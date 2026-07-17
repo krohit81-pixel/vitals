@@ -12,6 +12,10 @@ export function ManualEntry({
 }) {
   const [text, setText] = useState("");
 
+  const handleShortcutTap = (label: string) => {
+    setText((prev) => (prev.trim() ? `${prev.trim()}, ${label}` : label));
+  };
+
   return (
     <div className="flex flex-col gap-4 py-4">
       <textarea
@@ -32,7 +36,7 @@ export function ManualEntry({
           {shortcuts.map((label) => (
             <button
               key={label}
-              onClick={() => setText(label)}
+              onClick={() => handleShortcutTap(label)}
               className="rounded-xl border border-black/[0.08] px-3 py-2.5 text-left text-xs leading-snug text-black/60 hover:bg-black/[0.03] dark:border-white/[0.1] dark:text-white/60 dark:hover:bg-white/[0.06]"
             >
               {label}
