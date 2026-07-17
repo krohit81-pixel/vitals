@@ -116,6 +116,20 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["weight_logs"]["Row"]>;
       Relationships: never[];
       };
+      meal_shortcuts: {
+        Row: {
+          id: string;
+          user_id: string;
+          label: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["meal_shortcuts"]["Row"]> & {
+          user_id: string;
+          label: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["meal_shortcuts"]["Row"]>;
+      Relationships: never[];
+      };
       health_metrics: {
         Row: {
           id: string;

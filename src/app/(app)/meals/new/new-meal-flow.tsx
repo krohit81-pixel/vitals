@@ -26,7 +26,7 @@ const TITLES: Record<Mode, string> = {
   voice: "Voice entry",
 };
 
-export function NewMealFlow() {
+export function NewMealFlow({ shortcuts }: { shortcuts: string[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mode = (searchParams.get("mode") as Mode) || "manual";
@@ -139,7 +139,7 @@ export function NewMealFlow() {
             <PhotoCapture useCameraCapture={mode === "photo"} onAnalyze={handlePhotoAnalyze} />
           )}
           {mode === "manual" && (
-            <ManualEntry onAnalyze={(desc) => handleTextAnalyze(desc, "manual")} />
+            <ManualEntry onAnalyze={(desc) => handleTextAnalyze(desc, "manual")} shortcuts={shortcuts} />
           )}
           {mode === "voice" && (
             <VoiceCapture onAnalyze={(transcript) => handleTextAnalyze(transcript, "voice")} />

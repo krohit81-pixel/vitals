@@ -41,6 +41,20 @@ export default async function ProfilePage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Meal Shortcuts</CardTitle>
+        </CardHeader>
+        <p className="mb-3 text-sm text-black/50 dark:text-white/50">
+          Manage the quick-add chips shown on Manual Entry.
+        </p>
+        <Link href="/profile/meal-shortcuts">
+          <Button variant="outline" className="w-full">
+            Manage Shortcuts
+          </Button>
+        </Link>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Health Data</CardTitle>
         </CardHeader>
         <p className="mb-3 text-sm text-black/50 dark:text-white/50">

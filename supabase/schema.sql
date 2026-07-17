@@ -204,6 +204,20 @@ create index if not exists health_metrics_user_metric_date
 create index if not exists health_metrics_user_metric_at
   on public.health_metrics (user_id, metric, recorded_at desc);
 
+-- Auto-provision public.users + public.goals whenever someone signs up.
+-- SECURITY DEFINER lets this run as the table owner, bypassing RLS — so it
+-- works regardless of whether the client has an active session yet (e.g.
+-- during email-confirmation flows), unlike a client-side insert right after
+-- signUp(), which can silently fail RLS if no session exists yet.
+-- Quick-add phrases shown as chips on the Manual Entry screen (e.g. "Dal
+-- rice") — user-managed reference data, edited from Profile → Meal Shortcuts.
+create table if not exists public.meal_shortcuts (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  label text not null check (char_length(label) <= 50),
+  created_at timestamptz default now()
+);
+
 -- Row Level Security: every user can only touch their own rows
 alter table public.users enable row level security;
 alter table public.goals enable row level security;
@@ -215,6 +229,7 @@ alter table public.ai_feedback enable row level security;
 alter table public.settings enable row level security;
 alter table public.workout_logs enable row level security;
 alter table public.health_metrics enable row level security;
+alter table public.meal_shortcuts enable row level security;
 
 do $$
 declare
@@ -222,7 +237,7 @@ declare
 begin
   for t in select unnest(array[
     'users','goals','meal_images','meal_logs',
-    'daily_totals','weight_logs','ai_feedback','settings','workout_logs','health_metrics'
+    'daily_totals','weight_logs','ai_feedback','settings','workout_logs','health_metrics','meal_shortcuts'
   ])
   loop
     execute format($f$
@@ -251,11 +266,8 @@ drop policy if exists "meal_photos_owner_access" on storage.objects;
 create policy "meal_photos_owner_access" on storage.objects
   for all using (bucket_id = 'meal-photos' and auth.uid()::text = (storage.foldername(name))[1]);
 
--- Auto-provision public.users + public.goals whenever someone signs up.
--- SECURITY DEFINER lets this run as the table owner, bypassing RLS — so it
--- works regardless of whether the client has an active session yet (e.g.
--- during email-confirmation flows), unlike a client-side insert right after
--- signUp(), which can silently fail RLS if no session exists yet.
+
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -269,6 +281,16 @@ begin
   insert into public.goals (user_id)
   values (new.id)
   on conflict (user_id) do nothing;
+
+  -- Same starting set the app used to hardcode — now editable per-user from
+  -- day one instead of being fixed in code.
+  insert into public.meal_shortcuts (user_id, label)
+  values
+    (new.id, '2 eggs and toast'),
+    (new.id, 'Chicken biryani'),
+    (new.id, 'Paneer tikka'),
+    (new.id, 'Dal rice')
+  on conflict do nothing;
 
   return new;
 end;
