@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { Scale, HeartPulse, Footprints, Apple, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
@@ -8,7 +7,6 @@ import { RangeSelector } from "@/components/progress/range-selector";
 import { OverviewCard } from "@/components/progress/overview-card";
 import { MiniRing } from "@/components/progress/mini-ring";
 import { HealthInsightsCard } from "./health-insights";
-import { HealthInsightsSkeleton } from "./health-insights-skeleton";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
 import { getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
 import { getDailyMetricSeries, summarizeSeries } from "@/lib/nutrition/get-health-metrics";
@@ -62,6 +60,14 @@ export default async function ProgressPage({
     getDailyMetricSeries(supabase, userId, "step_count", periodStart, today),
     getDailyMetricSeries(supabase, userId, "resting_heart_rate", periodStart, today),
   ]);
+
+  const { data: latestInsights } = await supabase
+    .from("health_insights")
+    .select("insights, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const { data: earliestWeightLog } = await supabase
     .from("weight_logs")
@@ -158,17 +164,20 @@ export default async function ProgressPage({
 
       <RangeSelector range={range} />
 
-      <Suspense fallback={<HealthInsightsSkeleton />}>
-        <HealthInsightsCard
-          context={{
-            nutritionConsistencyPct: consistencies.calories,
-            activityTrend: { direction: totalWorkouts >= 3 ? "up" : "flat", workoutsThisPeriod: totalWorkouts },
-            ...(rhrStats.latest !== null && {
-              restingHeartRateTrend: { direction: rhrDirection, current: Math.round(rhrStats.latest) },
-            }),
-          }}
-        />
-      </Suspense>
+      <HealthInsightsCard
+        context={{
+          nutritionConsistencyPct: consistencies.calories,
+          activityTrend: { direction: totalWorkouts >= 3 ? "up" : "flat", workoutsThisPeriod: totalWorkouts },
+          ...(rhrStats.latest !== null && {
+            restingHeartRateTrend: { direction: rhrDirection, current: Math.round(rhrStats.latest) },
+          }),
+        }}
+        initial={
+          latestInsights
+            ? { insights: (latestInsights.insights ?? []) as string[], createdAt: latestInsights.created_at }
+            : null
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <OverviewCard

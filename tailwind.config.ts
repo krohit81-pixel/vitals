@@ -47,9 +47,14 @@ const config: Config = {
         body: ["var(--font-body)"],
       },
       boxShadow: {
-        soft: "0 2px 20px -4px rgba(24, 25, 28, 0.08)",
-        "soft-lg": "0 8px 40px -8px rgba(24, 25, 28, 0.14)",
-        glow: "0 0 0 1px rgba(16, 185, 129, 0.15), 0 8px 30px -6px rgba(16, 185, 129, 0.25)",
+        // v0.7: pushed noticeably deeper/darker than before so cards visibly
+        // lift off the background — the whole point of this pass was to make
+        // every tab read as brighter and more three-dimensional, not just
+        // technically "have a shadow".
+        soft: "0 6px 28px -6px rgba(24, 25, 28, 0.16), 0 2px 10px -3px rgba(24, 25, 28, 0.08)",
+        "soft-lg": "0 16px 56px -12px rgba(24, 25, 28, 0.24), 0 6px 20px -6px rgba(24, 25, 28, 0.12)",
+        glow: "0 0 0 1px rgba(16, 185, 129, 0.18), 0 10px 34px -6px rgba(16, 185, 129, 0.35)",
+        vivid: "0 10px 32px -6px rgba(24, 25, 28, 0.2), 0 3px 12px -2px rgba(24, 25, 28, 0.1)",
       },
       backdropBlur: {
         xs: "2px",

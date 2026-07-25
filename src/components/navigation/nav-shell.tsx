@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { BottomNav } from "./bottom-nav";
 import { CaptureSheet } from "./capture-sheet";
+import { TopBanner } from "./top-banner";
 
 export function NavShell({
   children,
@@ -40,6 +41,7 @@ export function NavShell({
     <div className="min-h-dvh">
       <Sidebar onCapture={() => setCaptureOpen(true)} />
       <main className="pb-24 md:ml-64 md:pb-8">
+        <TopBanner />
         <div className="mx-auto max-w-2xl px-4 pt-6 md:px-8 md:pt-10">{children}</div>
       </main>
       <BottomNav onCapture={() => setCaptureOpen(true)} />

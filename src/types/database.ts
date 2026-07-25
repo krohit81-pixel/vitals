@@ -171,6 +171,19 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["ai_feedback"]["Row"]>;
       Relationships: never[];
       };
+      health_insights: {
+        Row: {
+          id: string;
+          user_id: string;
+          insights: string[];
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["health_insights"]["Row"]> & {
+          user_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["health_insights"]["Row"]>;
+      Relationships: never[];
+      };
       settings: {
         Row: {
           user_id: string;

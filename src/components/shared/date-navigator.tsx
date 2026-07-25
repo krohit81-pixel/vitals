@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import {
@@ -10,12 +10,14 @@ import {
   periodBounds,
   formatPeriodLabel,
 } from "@/lib/nutrition/date";
+import { LoadingRing } from "@/components/shared/loading-ring";
 
 export function DateNavigator({ view }: { view: ViewMode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const paramAnchor = searchParams.get("date");
+  const [pending, startTransition] = useTransition();
 
   // Same rough guess the server uses for its own first paint (see
   // dashboard/page.tsx / meals/page.tsx) — using it here too means the label
@@ -48,31 +50,43 @@ export function DateNavigator({ view }: { view: ViewMode }) {
   const navigate = (direction: 1 | -1) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("date", stepAnchor(view, anchor, direction));
-    router.push(`${pathname}?${params.toString()}`);
+    // Wrapped in a transition so `pending` stays true until the server has
+    // actually re-rendered with the new date's data, not just until the URL
+    // updates — gives a real "still working" signal instead of nothing.
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
   };
 
   const jumpTo = (dateStr: string) => {
     if (!dateStr) return;
     const params = new URLSearchParams(searchParams.toString());
     params.set("date", dateStr);
-    router.push(`${pathname}?${params.toString()}`);
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
   };
 
   const nextPeriodStart = periodBounds(view, stepAnchor(view, anchor, 1))[0];
-  const nextDisabled = today !== null && nextPeriodStart > today;
+  const nextDisabled = (today !== null && nextPeriodStart > today) || pending;
 
   return (
     <div className="flex items-center justify-between gap-2">
       <button
         onClick={() => navigate(-1)}
+        disabled={pending}
         aria-label="Previous"
-        className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-black/[0.04] dark:bg-white/[0.06]"
+        className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-black/[0.04] disabled:opacity-50 dark:bg-white/[0.06]"
       >
         <ChevronLeft size={18} />
       </button>
 
       <div className="relative flex flex-1 items-center justify-center gap-1.5 text-sm font-medium">
-        <CalendarDays size={14} className="text-black/40 dark:text-white/40" />
+        {pending ? (
+          <LoadingRing size={14} className="text-emerald-600 dark:text-emerald-400" />
+        ) : (
+          <CalendarDays size={14} className="text-black/40 dark:text-white/40" />
+        )}
         <span>{formatPeriodLabel(view, anchor)}</span>
         <input
           type="date"

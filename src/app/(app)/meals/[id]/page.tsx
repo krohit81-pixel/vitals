@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { LocalTime } from "@/components/shared/local-time";
@@ -68,7 +68,15 @@ export default async function MealDetailPage({ params }: { params: Promise<{ id:
             <LocalTime iso={meal.logged_at} className="text-xs text-black/40 dark:text-white/40" />
           </div>
         </div>
-        <DeleteMealButton mealId={meal.id} />
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/meals/${meal.id}/edit`}
+            className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400"
+          >
+            <Pencil size={15} /> Edit
+          </Link>
+          <DeleteMealButton mealId={meal.id} />
+        </div>
       </div>
 
       {photoUrl && (

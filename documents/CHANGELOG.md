@@ -1,0 +1,191 @@
+# Changelog
+
+Consolidated from each round's individual change notes. Newest first.
+
+## v0.7
+
+- **New app logo/icon** — replaced with the colorful ring badge (heart-rate ring +
+  dumbbell + running figure + watch + water drop), cropped and centered from the
+  provided source artwork. Updated `logo.png`, `icon-192.png`, `icon-512.png`,
+  `apple-touch-icon.png`. Old assets kept at `public/previous logo/v0.6/`.
+- **AI Coach and Progress "Insights" no longer auto-call the LLM on every page
+  visit.** Both now show the last generated result (with a "Last generated at ..."
+  timestamp) and require an explicit Generate/Regenerate tap. Coach feedback persists
+  to the existing `ai_feedback` table (previously defined in schema but never written
+  to); Progress insights persist to a new `health_insights` table — **requires running
+  the updated `supabase/schema.sql` migration** before this feature works in
+  production.
+- **Loading indicators for in-place navigation** — Progress's 7d/30d/90d/1y range
+  switcher and the day navigator (used on both Dashboard and Meals) now show a
+  spinner and disable input while the new period's data loads, via `useTransition`
+  wrapping the router navigation. Previously a click gave no feedback until the page
+  had already re-rendered.
+- **Meals are now editable.** Meal detail page has an Edit action alongside Delete;
+  the edit form covers meal type, logged time, and all nutrition fields. Saving
+  recomputes `daily_totals` for the affected day(s) — including both the old and new
+  day if the edit moved the meal across midnight — and revalidates the same paths the
+  save/delete flows already did.
+- **Visual pass**: shadows across every card/surface (`shadow-soft`, `shadow-soft-lg`,
+  `shadow-glow`) deepened for more visible lift; new `shadow-vivid` token. Added a
+  persistent bright gradient (rose → orange → emerald) identity banner above the
+  content on every tab.
+
+## Logo update
+
+New gradient ring app icon/logo (replaced the leaf-based one). Source image had a
+checkerboard baked into its pixels rather than real alpha transparency — removed via a
+saturation+brightness-aware cutout (colorful pixels stay opaque regardless of
+brightness, light-grayscale pixels become transparent, dark-grayscale pixels — the
+lightning bolt — stay opaque). No code changes; the `Logo` component already read from
+the same filenames everywhere.
+
+## v0.6.4
+
+- Fixed `schema.sql` ordering bug (`meal_shortcuts` created after RLS already tried to
+  touch it).
+- Manual Entry shortcuts now append to existing text instead of replacing it.
+- Removed the "N day streak" text label (was mathematically correct — counts
+  *consecutive* hits — but confusing next to a dots row showing more total checkmarks
+  than the number implied).
+- Visual redesign pass: `CalorieRing` and `HealthScoreRing` got richer multi-hue
+  gradients, stronger glow, bigger numbers, and a slider-thumb marker. `MacroCard`
+  redesigned as a slider (track + fill + thumb), diversified per-metric colors
+  (protein violet, water cyan — previously both blue), and fixed a bug where its icon
+  color was hardcoded to emerald regardless of the metric. Scoped to these components
+  only — `OverviewCard` and the trend charts still have the older look.
+
+## v0.6.3
+
+- **Meal Shortcuts management screen** (`/profile/meal-shortcuts`) — the quick-add
+  chips on Manual Entry were hardcoded in source before this; now full add/edit/delete
+  per-user data, seeded with the same 4 defaults new signups always got.
+- 50-character limit enforced structurally: chips moved from a `whitespace-nowrap`
+  pill row (which could only ever fit short phrases) to a fixed-width grid with normal
+  text wrapping — can't overflow regardless of label length, not a truncation
+  workaround.
+
+## v0.6.2
+
+- Clarifying questions during meal analysis now show real answer options (e.g.
+  "Water" / "Milk" / "Both") instead of a forced Yes/No toggle — fixed end-to-end
+  (prompt, schema, all 3 AI providers, UI).
+- Progress tab: removed the still-overflowing Activity/Nutrition chart visuals per
+  explicit instruction, reworded a confusing stat label, redesigned the Insights card
+  with topic-matched icons instead of plain paragraphs.
+- Cross-source workout duplicate detection on import (see `docs/ARCHITECTURE.md`).
+- Fixed a real timezone bug in the HealthSave import: timestamps were UTC (`Z` suffix)
+  but were being read as if already local. Verified against the actual export file —
+  a workout's time corrected from a wrong 13:01 to the accurate 18:31 IST.
+
+## Milestone 4 — Progress & Health Analytics
+
+- `weight_logs` table rebuilt to the new spec (confirmed unused before dropping/
+  recreating). New `health_metrics` table for imported HealthSave data.
+- JSON import engine (`/profile/health-import`) — validates, splits into plain metrics
+  vs. correlated workout pairs, dedupes, imports. Verified against the real uploaded
+  export (2,494 records → 2,488 readings + 3 workouts, zero skipped).
+- Weight logging (quick-add + full history/edit).
+- Progress dashboard: Health Score ring, AI insights (new `generateHealthInsights()`
+  provider method), four overview cards, 7D/30D/90D/1Y range selector, achievements.
+- Detail screens: dedicated Weight and Nutrition screens, one generic metric-detail
+  route serving Heart/HRV/SpO2/Steps/Distance/Flights instead of four bespoke pages.
+
+## Progress card bug fixes (same round as above)
+
+- Overview card sparklines were overflowing their cards — replaced with bounded SVG
+  rings/donuts (can't overflow the way an auto-sizing chart container can).
+- Health Score's "vs last period" delta was silently computing "current − 0" when the
+  previous period had no data, making it equal the score itself. Fixed to only show a
+  real delta when there's real previous-period data, and always show the comparison
+  period's date range.
+
+## AI Coach screen build
+
+Hero AI-generated summary (streams in via Suspense, isolated so a slow/failed LLM call
+never blocks the rest of the page), recommendations list, weekly rhythm score
+(composite consistency score, no "failure" tier), insight cards with sparklines
+(pure computation, no LLM), streak tie-in. Chat interface deliberately deferred.
+
+## Date navigator performance fix
+
+Root cause of a 1-2 second load delay: `DateNavigator` rendered blank and
+unconditionally redirected to attach a `date` URL param on every load, forcing a full
+page refetch even when the guess was already correct. Fixed — see
+`docs/ARCHITECTURE.md`'s date navigation section.
+
+## v0.4 — Dashboard/analytics visual redesign
+
+Trend charts switched from area to bar charts with per-day under/over shading, "Under/
+Over" headline framing on trend cards (colored per-metric, not a good/bad judgement),
+Consumed-vs-Burned rebuilt as grouped bars + a Net total line, a real Streak feature
+(a day only counts as a "hit" if something was logged and net calories stayed within a
+tolerance — later tightened to zero tolerance, see v0.4 follow-up fixes), Macro Split
+card (pie + stacked daily bars).
+
+### v0.4 follow-up fixes
+- Ring didn't show the actual over-budget amount (clamped to 0) — fixed, now shows red
+  with the real overage; added an amber "approaching" state at ≤200 kcal remaining.
+- Streak: switched from a rolling 7-day window to a fixed Monday–Sunday week; "today"
+  was being judged on partial data (could flash green early, flip later) — fixed to
+  always show as neutral "pending" until the day is actually over. Later, the 5%
+  tolerance itself was removed entirely so streak agrees exactly with the ring's
+  over/under definition (no more disagreement between the two).
+
+## Apple Health: built, then removed
+
+Personal sync-token + iOS Shortcuts automation bridge, using Apple's documented
+"Apple Watch Workout" trigger. Removed after confirming via screenshot that the
+required actions weren't available on the actual test device, after two rounds of
+attempted instruction fixes. Data model (`workout_logs.source`/`.health_workout_id`)
+was deliberately built to survive this removal with zero schema changes — see
+`docs/ARCHITECTURE.md`.
+
+Also in this round: `CalorieRing` redesigned with a gradient/glow ring and icon-based
+Consumed/Burned/Remaining breakdown (Apple Fitness-inspired, first pass — later
+refined further in v0.6.4).
+
+## Milestone 4 — Activity Tracking
+
+Manual workout logging (12 types, full CRUD), energy balance formula
+(`Remaining = Target + Burned − Consumed`), unified daily timeline merging meals and
+workouts chronologically, exercise-aware analytics (Net Calories, Consumed vs Burned,
+Workout Duration/Frequency).
+
+## Milestone 3 — Historical navigation & trends
+
+Date navigation (prev/next + calendar picker) on Dashboard and Meals, Day/Week/Month
+views, reusable trend chart components (`MetricTrendCard`), consistency scoring
+(`calcConsistency` — % of days hitting ≥80% of target). Established the URL-param-
+driven navigation pattern used throughout the rest of the app since.
+
+## v0.3.x — Early bug fixes
+
+Calorie ring text centering (was being centered relative to the ring *plus* the stats
+row below it, not just the ring, due to how browsers position absolutely-positioned
+flex children); dynamic time-of-day greeting (was hardcoded "Good morning" regardless
+of actual time — same timezone-correctness class of bug documented in
+`docs/ARCHITECTURE.md`).
+
+## v0.3 — Meal detail, timezone fixes, water logging
+
+Full meal detail page (photo, all items, full nutrient breakdown), Dashboard/Meals
+cards linking to it, `LocalTime` component fixing meal timestamps showing in the
+server's timezone instead of the viewer's, water logging (quick-add, no LLM involved,
+direct DB write) with its own section on the Meals tab.
+
+## Milestone 2 — Meal logging & vision pipeline
+
+Photo/manual/voice capture flows, Gemini vision pipeline, clarification-chip flow for
+low-confidence detections, real dashboard/meals data (replacing Milestone 1's mock
+data). Several early bug fixes in this window: React 19's `useFormState` →
+`useActionState` rename, a Supabase types/generics mismatch, a `useSearchParams`
+Suspense-boundary requirement for static builds, and the first Gemini model
+deprecation (`gemini-2.0-flash` shut down mid-project — model name is now flagged as a
+recurring maintenance point in `docs/ARCHITECTURE.md`).
+
+## Milestone 1 — Foundation
+
+Next.js 15 + TypeScript + Tailwind scaffold, Supabase Auth with session middleware,
+bottom nav / sidebar shell, glass-card design system, the AI provider abstraction
+(Gemini/OpenAI/Claude behind one interface) built from day one even though only
+Gemini was wired up yet, full database schema with RLS.

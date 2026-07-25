@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { Beef, Leaf, Flame, Dumbbell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
@@ -6,7 +5,6 @@ import { StreakCard } from "@/components/dashboard/streak-card";
 import { InsightCard } from "@/components/coach/insight-card";
 import { RhythmGauge } from "@/components/coach/rhythm-gauge";
 import { AiFeedback } from "./ai-feedback";
-import { AiFeedbackSkeleton } from "./ai-feedback-skeleton";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
 import { getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
 import { computeStreakDays } from "@/lib/nutrition/streak";
@@ -24,10 +22,18 @@ export default async function CoachPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: goalsRow }, totals, workoutTotals] = await Promise.all([
+  const [{ data: goalsRow }, totals, workoutTotals, { data: latestFeedback }] = await Promise.all([
     supabase.from("goals").select("*").eq("user_id", user!.id).single(),
     getDailyTotalsRange(supabase, user!.id, weekStart, weekEnd),
     getWorkoutTotalsRange(supabase, user!.id, weekStart, weekEnd),
+    supabase
+      .from("ai_feedback")
+      .select("summary, recommendations, created_at")
+      .eq("user_id", user!.id)
+      .eq("period", "weekly")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const goals = goalsRow ?? {
@@ -69,26 +75,36 @@ export default async function CoachPage() {
         <ProfileMenuButton />
       </div>
 
-      <Suspense fallback={<AiFeedbackSkeleton />}>
-        <AiFeedback
-          goals={{
+      <AiFeedback
+        context={{
+          period: "weekly",
+          goals: {
             calories: goals.calorie_target,
             proteinG: goals.protein_target_g,
             carbsG: goals.carb_target_g,
             fatG: goals.fat_target_g,
             fibreG: goals.fibre_target_g,
-          }}
-          actuals={{
+          },
+          actuals: {
             calories: Math.round(average(totals.map((t) => t.calories))),
             proteinG: Math.round(average(totals.map((t) => t.protein_g))),
             carbsG: Math.round(average(totals.map((t) => t.carbs_g))),
             fatG: Math.round(average(totals.map((t) => t.fat_g))),
             fibreG: Math.round(average(totals.map((t) => t.fibre_g))),
-          }}
-          proteinConsistencyPct={consistencies.protein}
-          statusColor={statusColor}
-        />
-      </Suspense>
+          },
+          proteinConsistencyPct: consistencies.protein,
+        }}
+        initial={
+          latestFeedback
+            ? {
+                summary: latestFeedback.summary,
+                recommendations: (latestFeedback.recommendations ?? []) as string[],
+                createdAt: latestFeedback.created_at,
+              }
+            : null
+        }
+        statusColor={statusColor}
+      />
 
       <div className="glass-card">
         <RhythmGauge rhythm={rhythm} />

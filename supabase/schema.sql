@@ -213,6 +213,16 @@ create table if not exists public.meal_shortcuts (
   created_at timestamptz default now()
 );
 
+-- v0.7: Progress tab's "Insights" card, generated on-demand (button press)
+-- rather than on every page load — same reasoning as ai_feedback above. Each
+-- generation is a new row so the card can always show "last generated at".
+create table if not exists public.health_insights (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  insights jsonb not null default '[]',
+  created_at timestamptz default now()
+);
+
 -- Row Level Security: every user can only touch their own rows
 alter table public.users enable row level security;
 alter table public.goals enable row level security;
@@ -225,6 +235,7 @@ alter table public.settings enable row level security;
 alter table public.workout_logs enable row level security;
 alter table public.health_metrics enable row level security;
 alter table public.meal_shortcuts enable row level security;
+alter table public.health_insights enable row level security;
 
 do $$
 declare
@@ -232,7 +243,8 @@ declare
 begin
   for t in select unnest(array[
     'users','goals','meal_images','meal_logs',
-    'daily_totals','weight_logs','ai_feedback','settings','workout_logs','health_metrics','meal_shortcuts'
+    'daily_totals','weight_logs','ai_feedback','settings','workout_logs','health_metrics','meal_shortcuts',
+    'health_insights'
   ])
   loop
     execute format($f$
