@@ -5,7 +5,6 @@ import { MacroCard } from "@/components/dashboard/macro-card";
 import { MealCard, type MealCardData } from "@/components/shared/meal-card";
 import { WorkoutCard, type WorkoutCardData } from "@/components/shared/workout-card";
 import { AppHeader } from "@/components/navigation/app-header";
-import { FloatingControls } from "@/components/shared/floating-controls";
 import { DateNavigator } from "@/components/shared/date-navigator";
 import { PeriodSelector } from "@/components/dashboard/period-selector";
 import { MetricTrendCard } from "@/components/analytics/metric-trend-card";
@@ -75,13 +74,10 @@ export default async function DashboardPage({
 
   return (
     <div className="animate-fade-up space-y-5">
-      <div>
-        <AppHeader />
-        <FloatingControls>
-          <PeriodSelector view={view} />
-          <DateNavigator view={view} />
-        </FloatingControls>
-      </div>
+      <AppHeader />
+
+      <PeriodSelector view={view} />
+      <DateNavigator view={view} />
 
       {view === "day" ? (
         <DayView

@@ -6,7 +6,6 @@ import { MealCard, type MealCardData } from "@/components/shared/meal-card";
 import { WorkoutCard, type WorkoutCardData } from "@/components/shared/workout-card";
 import { WaterSummaryCard } from "@/components/meals/water-summary-card";
 import { AppHeader } from "@/components/navigation/app-header";
-import { FloatingControls } from "@/components/shared/floating-controls";
 import { DateNavigator } from "@/components/shared/date-navigator";
 import type { WorkoutType } from "@/lib/nutrition/workout-type";
 
@@ -78,12 +77,7 @@ export default async function MealsPage({
 
   return (
     <div className="animate-fade-up space-y-5">
-      <div>
-        <AppHeader />
-        <FloatingControls>
-          <DateNavigator view="day" />
-        </FloatingControls>
-      </div>
+      <AppHeader />
 
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Today</h1>
@@ -94,6 +88,8 @@ export default async function MealsPage({
           <Plus size={18} />
         </Link>
       </div>
+
+      <DateNavigator view="day" />
 
       {/* Water gets its own section, separate from the timeline below */}
       <WaterSummaryCard

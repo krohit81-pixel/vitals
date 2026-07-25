@@ -2,6 +2,25 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.7.4
+
+- **Header simplified back to a flat, full-bleed banner** (per a reference screenshot)
+  — dropped the rounded-corner card, shadow, inset margin, and floating-overlap
+  controls from v0.7.3; those read as "an image inserted into the UI" rather than
+  integrated chrome. Now it's just a tall edge-to-edge image with a soft bottom fade
+  into the page background, and each tab's own controls (Day/Week/Month, date
+  arrows, range selector) sit in normal page flow below it with ordinary spacing —
+  no overlap. Scroll-driven compress/parallax kept.
+- **Fixed inconsistent tab-switch loading UI** — `(app)/loading.tsx` (Next's Suspense
+  fallback for slow navigations) was a full logo splash, completely different from
+  the small ring shown on the tapped nav icon via `useLinkStatus`. Depending on how
+  slow a given navigation was, viewers would see one or the other, which felt
+  inconsistent/broken. `loading.tsx` now shows the same `LoadingRing` spinner, so
+  either mechanism looks like the same loading language.
+- **Footer typography**: the version number now renders smaller than the rest of the
+  line, and the tagline underneath is now a distinct emerald tint instead of the same
+  neutral gray as the credit line.
+
 ## v0.7.3
 
 - **Header redesigned to feel like native iOS chrome instead of an inserted image.**
