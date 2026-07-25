@@ -1,6 +1,7 @@
 import { Scale, HeartPulse, Footprints, Apple, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/navigation/app-header";
+import { FloatingControls } from "@/components/shared/floating-controls";
 import { HealthScoreRing } from "@/components/progress/health-score-ring";
 import { RangeSelector } from "@/components/progress/range-selector";
 import { OverviewCard } from "@/components/progress/overview-card";
@@ -144,7 +145,12 @@ export default async function ProgressPage({
 
   return (
     <div className="animate-fade-up space-y-6 pb-8">
-      <AppHeader />
+      <div>
+        <AppHeader />
+        <FloatingControls>
+          <RangeSelector range={range} />
+        </FloatingControls>
+      </div>
 
       <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Progress</h1>
 
@@ -154,8 +160,6 @@ export default async function ProgressPage({
         </span>
         <HealthScoreRing score={healthScore.score} deltaVsPrevious={scoreDelta} previousPeriodLabel={previousPeriodLabel} />
       </div>
-
-      <RangeSelector range={range} />
 
       <HealthInsightsCard
         context={{

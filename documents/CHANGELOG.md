@@ -2,6 +2,27 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.7.3
+
+- **Header redesigned to feel like native iOS chrome instead of an inserted image.**
+  `AppHeader` is now a rounded (28px), shadowed, slightly inset card — not a
+  full-bleed rectangle — with a bottom gradient fade that dissolves the artwork into
+  the page's own background, plus a faint (6-7% opacity) blurred color wash behind
+  the content that follows, so the transition from vivid artwork to plain background
+  no longer feels abrupt.
+- **Safe-area aware**: the card's top edge still touches the true top of the screen
+  (artwork extends behind the status bar/notch when installed as a PWA), but the
+  mobile profile button is offset by `env(safe-area-inset-top)` so it's never hidden
+  under it.
+- **New `FloatingControls` wrapper** — Dashboard/Meals/Progress's own controls
+  (Day/Week/Month, date arrows, the range selector) now live in a rounded white/graphite
+  card that overlaps the header's bottom edge by ~18px, the "card floating on the
+  hero" depth cue from Apple Fitness/Health, instead of starting flush where the
+  artwork ends.
+- **Scroll motion**: the header now gently compresses and parallax-drifts (slower
+  than the page) as you scroll, rather than holding a fixed size until it's pinned or
+  abruptly cut off.
+
 ## v0.7.2
 
 - **`AppHeader` now renders the provided `header.PNG` artwork** (full-bleed, fixed
