@@ -144,7 +144,7 @@ export default async function ProgressPage({
 
   return (
     <div className="animate-fade-up space-y-6 pb-8">
-      <AppHeader controls={<RangeSelector range={range} />} />
+      <AppHeader />
 
       <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Progress</h1>
 
@@ -154,6 +154,8 @@ export default async function ProgressPage({
         </span>
         <HealthScoreRing score={healthScore.score} deltaVsPrevious={scoreDelta} previousPeriodLabel={previousPeriodLabel} />
       </div>
+
+      <RangeSelector range={range} />
 
       <HealthInsightsCard
         context={{

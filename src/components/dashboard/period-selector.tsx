@@ -33,18 +33,22 @@ export function PeriodSelector({ view }: { view: ViewMode }) {
   };
 
   return (
-    <div className="flex gap-1 rounded-xl bg-white/15 p-1">
+    <div className="flex gap-1 rounded-xl bg-black/[0.04] p-1 dark:bg-white/[0.06]">
       {OPTIONS.map((opt) => (
         <button
           key={opt.value}
           onClick={() => setView(opt.value)}
           disabled={pending}
           className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-colors disabled:opacity-80",
-            view === opt.value ? "bg-white text-ink shadow-soft" : "text-white/85"
+            "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-colors disabled:opacity-70",
+            view === opt.value
+              ? "bg-white shadow-soft dark:bg-graphite-50"
+              : "text-black/50 dark:text-white/50"
           )}
         >
-          {pending && pendingView === opt.value && <LoadingRing size={11} className="text-emerald-600" />}
+          {pending && pendingView === opt.value && (
+            <LoadingRing size={11} className="text-emerald-600 dark:text-emerald-400" />
+          )}
           {opt.label}
         </button>
       ))}

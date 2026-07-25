@@ -74,14 +74,10 @@ export default async function DashboardPage({
 
   return (
     <div className="animate-fade-up space-y-5">
-      <AppHeader
-        controls={
-          <div className="flex w-full flex-col gap-2.5">
-            <PeriodSelector view={view} />
-            <DateNavigator view={view} />
-          </div>
-        }
-      />
+      <AppHeader />
+
+      <PeriodSelector view={view} />
+      <DateNavigator view={view} />
 
       {view === "day" ? (
         <DayView

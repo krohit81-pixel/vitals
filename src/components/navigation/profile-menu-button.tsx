@@ -18,7 +18,7 @@ export function ProfileMenuButton({ variant = "default" }: { variant?: "default"
       className={cn(
         "pressable flex h-9 w-9 items-center justify-center rounded-full md:hidden",
         variant === "banner"
-          ? "bg-white/20 text-white hover:bg-white/30"
+          ? "bg-white/80 text-ink shadow-soft backdrop-blur-sm hover:bg-white"
           : "bg-black/[0.04] text-black/60 dark:bg-white/[0.06] dark:text-white/60"
       )}
     >

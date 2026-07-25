@@ -2,6 +2,21 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.7.2
+
+- **`AppHeader` now renders the provided `header.PNG` artwork** (full-bleed, fixed
+  height, `object-cover`, same on every tab) instead of the gradient + logo/wordmark
+  built in v0.7.1 — the artwork already carries the Vitals mark and tagline, so no
+  text is overlaid on it except the mobile profile button (frosted white circle, for
+  contrast against the busy image regardless of what's underneath it).
+- **Tab-specific controls moved back out of the header** and render as normal page
+  content directly below it — `PeriodSelector` + `DateNavigator` on Dashboard,
+  `DateNavigator` on Meals, `RangeSelector` on Progress — recolored back to their
+  original neutral (light/dark) styling since they're no longer sitting on a colored
+  background. The header itself stays a fixed, deliberately large height on every tab
+  regardless of whether that tab has controls under it.
+- **Version number moved to the footer**: "Vitals v:0.7.2 - Created by Rohit Kohli".
+
 ## v0.7.1
 
 - **Removed the "Good afternoon, Rohit" greeting** from the Dashboard header — the
