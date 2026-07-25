@@ -1,6 +1,6 @@
 import { Beef, Leaf, Flame, Dumbbell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
+import { AppHeader } from "@/components/navigation/app-header";
 import { StreakCard } from "@/components/dashboard/streak-card";
 import { InsightCard } from "@/components/coach/insight-card";
 import { RhythmGauge } from "@/components/coach/rhythm-gauge";
@@ -70,10 +70,9 @@ export default async function CoachPage() {
 
   return (
     <div className="animate-fade-up space-y-6 pb-8">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">AI Coach</h1>
-        <ProfileMenuButton />
-      </div>
+      <AppHeader />
+
+      <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">AI Coach</h1>
 
       <AiFeedback
         context={{

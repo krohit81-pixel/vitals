@@ -1,7 +1,6 @@
 import { Scale, HeartPulse, Footprints, Apple, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
-import { GreetingText } from "@/components/dashboard/greeting-text";
+import { AppHeader } from "@/components/navigation/app-header";
 import { HealthScoreRing } from "@/components/progress/health-score-ring";
 import { RangeSelector } from "@/components/progress/range-selector";
 import { OverviewCard } from "@/components/progress/overview-card";
@@ -145,15 +144,9 @@ export default async function ProgressPage({
 
   return (
     <div className="animate-fade-up space-y-6 pb-8">
-      <header className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-black/50 dark:text-white/50">
-            <GreetingText />
-          </p>
-          <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Progress</h1>
-        </div>
-        <ProfileMenuButton />
-      </header>
+      <AppHeader controls={<RangeSelector range={range} />} />
+
+      <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Progress</h1>
 
       <div className="glass-card flex flex-col items-center py-6">
         <span className="mb-2 text-[11px] font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
@@ -161,8 +154,6 @@ export default async function ProgressPage({
         </span>
         <HealthScoreRing score={healthScore.score} deltaVsPrevious={scoreDelta} previousPeriodLabel={previousPeriodLabel} />
       </div>
-
-      <RangeSelector range={range} />
 
       <HealthInsightsCard
         context={{

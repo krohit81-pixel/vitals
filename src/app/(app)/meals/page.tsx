@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { MealCard, type MealCardData } from "@/components/shared/meal-card";
 import { WorkoutCard, type WorkoutCardData } from "@/components/shared/workout-card";
 import { WaterSummaryCard } from "@/components/meals/water-summary-card";
-import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
+import { AppHeader } from "@/components/navigation/app-header";
 import { DateNavigator } from "@/components/shared/date-navigator";
 import type { WorkoutType } from "@/lib/nutrition/workout-type";
 
@@ -77,20 +77,17 @@ export default async function MealsPage({
 
   return (
     <div className="animate-fade-up space-y-5">
+      <AppHeader controls={<DateNavigator view="day" />} />
+
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Today</h1>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/meals/new?mode=manual"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white"
-          >
-            <Plus size={18} />
-          </Link>
-          <ProfileMenuButton />
-        </div>
+        <Link
+          href="/meals/new?mode=manual"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white"
+        >
+          <Plus size={18} />
+        </Link>
       </div>
-
-      <DateNavigator view="day" />
 
       {/* Water gets its own section, separate from the timeline below */}
       <WaterSummaryCard

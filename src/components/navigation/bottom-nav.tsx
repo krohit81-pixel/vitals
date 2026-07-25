@@ -1,11 +1,25 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { TAB_ITEMS } from "./nav-items";
+import { LoadingRing } from "@/components/shared/loading-ring";
 import { cn } from "@/lib/utils";
+
+/** Must render as a descendant of <Link> — useLinkStatus reflects whether
+ * *this specific* link's navigation is in flight, so a tab switch always
+ * shows a visible spinner instead of nothing happening until the new
+ * screen appears. */
+function TabIcon({ icon: Icon, active }: { icon: LucideIcon; active: boolean }) {
+  const { pending } = useLinkStatus();
+  const colorClass = active ? "text-emerald-600 dark:text-emerald-400" : "text-black/40 dark:text-white/40";
+
+  if (pending) return <LoadingRing size={20} className={colorClass} />;
+  return <Icon size={22} strokeWidth={active ? 2.4 : 2} className={cn("transition-colors", colorClass)} />;
+}
 
 export function BottomNav({ onCapture }: { onCapture: () => void }) {
   const pathname = usePathname();
@@ -14,7 +28,6 @@ export function BottomNav({ onCapture }: { onCapture: () => void }) {
 
   const renderItem = (item: (typeof TAB_ITEMS)[number]) => {
     const active = pathname.startsWith(item.href);
-    const Icon = item.icon;
     return (
       <Link
         key={item.href}
@@ -28,14 +41,7 @@ export function BottomNav({ onCapture }: { onCapture: () => void }) {
             transition={{ type: "spring", stiffness: 500, damping: 35 }}
           />
         )}
-        <Icon
-          size={22}
-          strokeWidth={active ? 2.4 : 2}
-          className={cn(
-            "transition-colors",
-            active ? "text-emerald-600 dark:text-emerald-400" : "text-black/40 dark:text-white/40"
-          )}
-        />
+        <TabIcon icon={item.icon} active={active} />
         <span
           className={cn(
             "text-[10px] font-medium",

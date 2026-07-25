@@ -76,16 +76,16 @@ export function DateNavigator({ view }: { view: ViewMode }) {
         onClick={() => navigate(-1)}
         disabled={pending}
         aria-label="Previous"
-        className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-black/[0.04] disabled:opacity-50 dark:bg-white/[0.06]"
+        className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white disabled:opacity-50"
       >
         <ChevronLeft size={18} />
       </button>
 
-      <div className="relative flex flex-1 items-center justify-center gap-1.5 text-sm font-medium">
+      <div className="relative flex flex-1 items-center justify-center gap-1.5 text-sm font-medium text-white">
         {pending ? (
-          <LoadingRing size={14} className="text-emerald-600 dark:text-emerald-400" />
+          <LoadingRing size={14} className="text-white" />
         ) : (
-          <CalendarDays size={14} className="text-black/40 dark:text-white/40" />
+          <CalendarDays size={14} className="text-white/75" />
         )}
         <span>{formatPeriodLabel(view, anchor)}</span>
         <input
@@ -102,7 +102,7 @@ export function DateNavigator({ view }: { view: ViewMode }) {
         onClick={() => navigate(1)}
         disabled={nextDisabled}
         aria-label="Next"
-        className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-black/[0.04] disabled:opacity-30 dark:bg-white/[0.06]"
+        className="pressable flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white disabled:opacity-30"
       >
         <ChevronRight size={18} />
       </button>

@@ -4,9 +4,7 @@ import { CalorieRing } from "@/components/dashboard/calorie-ring";
 import { MacroCard } from "@/components/dashboard/macro-card";
 import { MealCard, type MealCardData } from "@/components/shared/meal-card";
 import { WorkoutCard, type WorkoutCardData } from "@/components/shared/workout-card";
-import { ProfileMenuButton } from "@/components/navigation/profile-menu-button";
-import { GreetingText } from "@/components/dashboard/greeting-text";
-import { Logo } from "@/components/shared/logo";
+import { AppHeader } from "@/components/navigation/app-header";
 import { DateNavigator } from "@/components/shared/date-navigator";
 import { PeriodSelector } from "@/components/dashboard/period-selector";
 import { MetricTrendCard } from "@/components/analytics/metric-trend-card";
@@ -37,8 +35,7 @@ export default async function DashboardPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { data: goals }, rangeTotals, workoutRangeTotals] = await Promise.all([
-    supabase.from("users").select("full_name").eq("id", user!.id).single(),
+  const [{ data: goals }, rangeTotals, workoutRangeTotals] = await Promise.all([
     supabase.from("goals").select("*").eq("user_id", user!.id).single(),
     getDailyTotalsRange(supabase, user!.id, rangeStart, rangeEnd),
     getWorkoutTotalsRange(supabase, user!.id, rangeStart, rangeEnd),
@@ -57,7 +54,6 @@ export default async function DashboardPage({
   ]);
   const burnedByStreakDate = new Map(streakWorkouts.map((w) => [w.date, w.caloriesBurned]));
 
-  const firstName = profile?.full_name?.split(" ")[0] ?? "there";
   const g = goals ?? {
     calorie_target: 2000,
     protein_target_g: 120,
@@ -78,23 +74,14 @@ export default async function DashboardPage({
 
   return (
     <div className="animate-fade-up space-y-5">
-      <header className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <Logo size="md" />
-          <div>
-            <p className="text-sm text-black/50 dark:text-white/50">
-              <GreetingText />
-            </p>
-            <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">
-              {firstName}
-            </h1>
+      <AppHeader
+        controls={
+          <div className="flex w-full flex-col gap-2.5">
+            <PeriodSelector view={view} />
+            <DateNavigator view={view} />
           </div>
-        </div>
-        <ProfileMenuButton />
-      </header>
-
-      <PeriodSelector view={view} />
-      <DateNavigator view={view} />
+        }
+      />
 
       {view === "day" ? (
         <DayView

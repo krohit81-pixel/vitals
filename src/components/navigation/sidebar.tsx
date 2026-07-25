@@ -1,11 +1,22 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { NAV_ITEMS } from "./nav-items";
 import { Logo } from "@/components/shared/logo";
+import { LoadingRing } from "@/components/shared/loading-ring";
 import { cn } from "@/lib/utils";
+
+/** Descendant of <Link> — reflects whether *this* link's navigation is in
+ * flight, so switching sections in the sidebar always gives visible
+ * feedback instead of an unclear pause. */
+function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
+  const { pending } = useLinkStatus();
+  if (pending) return <LoadingRing size={17} className="text-current" />;
+  return <Icon size={19} />;
+}
 
 export function Sidebar({ onCapture }: { onCapture: () => void }) {
   const pathname = usePathname();
@@ -27,7 +38,6 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
       <nav className="flex flex-1 flex-col gap-1">
         {NAV_ITEMS.map((item) => {
           const active = pathname.startsWith(item.href);
-          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -39,7 +49,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
                   : "text-black/60 hover:bg-black/[0.04] dark:text-white/60 dark:hover:bg-white/[0.06]"
               )}
             >
-              <Icon size={19} />
+              <NavIcon icon={item.icon} />
               {item.label}
             </Link>
           );

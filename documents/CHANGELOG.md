@@ -2,6 +2,30 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.7.1
+
+- **Removed the "Good afternoon, Rohit" greeting** from the Dashboard header — the
+  header's identity is now just the app banner (see below).
+- **New `AppHeader`**, rendered by every tab (Dashboard, Meals, Progress, Coach,
+  Profile) instead of the old thin identity strip: full-bleed gradient banner with
+  Logo + "Vitals" + a version badge (`v{package.json version}`, via
+  `src/lib/version.ts`) + tagline + the profile menu button on top, and each tab's
+  own navigation controls (Day/Week/Month + date arrows on Dashboard, the date arrows
+  alone on Meals, the 7d/30d/90d/1y selector on Progress) extended *into* the banner
+  below that. Height is fixed (`min-h-[96px]` for the controls row) rather than
+  content-driven, so Coach and Profile — which have no controls — reserve the exact
+  same blank colored space as tabs that do. That's deliberate: room for a future
+  banner photo (meal/workout imagery), not a layout gap.
+- Per-page `ProfileMenuButton` instances consolidated into the one in `AppHeader`;
+  `PeriodSelector`/`RangeSelector`/`DateNavigator` recolored (white/translucent) since
+  they now always render on the gradient rather than a plain background.
+- **Loading ring coverage extended app-wide** — `PeriodSelector` (Day/Week/Month) now
+  shows the same spinner-on-tap treatment as the range/date selectors from v0.7, and
+  bottom-nav / sidebar tab switching now shows a spinner in place of the tapped tab's
+  icon via Next's `useLinkStatus()` hook while the next screen loads.
+- **New footer** on every tab: "Created by Rohit Kohli" / "Eat right • Move more •
+  Live better".
+
 ## v0.7
 
 - **New app logo/icon** — replaced with the colorful ring badge (heart-rate ring +
