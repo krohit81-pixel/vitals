@@ -2,6 +2,22 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.8.0
+
+- **Fixed a production bug**: Progress's "Generate insights" threw
+  `PGRST205 — Could not find the table 'public.health_insights'`. The table was
+  added to `supabase/schema.sql` in v0.7 but that migration was never applied to the
+  live database — this needs a one-time manual step (run the table+RLS-policy SQL in
+  the Supabase SQL editor); no code was at fault.
+- **Header redesigned again** (open creative pass, no preview shown first) as a
+  collapsing large-title, the Apple Music/Health pattern: the big flat hero from
+  v0.7.4 is unchanged on first paint, but now compresses/parallaxes as you scroll
+  away from it, and once it's scrolled far enough to stop doing useful work, a slim
+  frosted compact bar (small logo + "Vitals" + profile button) fades and slides in,
+  pinned to the true top — so there's always brand orientation and a way back to
+  Profile without the artwork permanently occupying space. Sidebar-aware on desktop,
+  safe-area-correct in both states.
+
 ## v0.7.4
 
 - **Header simplified back to a flat, full-bleed banner** (per a reference screenshot)
