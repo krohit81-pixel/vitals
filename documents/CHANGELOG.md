@@ -2,6 +2,24 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.8.1
+
+- **Header artwork swapped** to `header_new.PNG` (lighter/less saturated) per user
+  feedback that the previous one was too bright. Integration (collapsing hero +
+  compact bar from v0.8.0) unchanged.
+- **New Personal Details screen** (`/profile/personal-details`) — height, weight,
+  age, gender, activity level, diet type, allergies, and preferred units, backed by
+  the existing `users` table columns (were in the schema since Milestone 1 but had
+  no editor until now). Linked from the Profile tab's "Personal details" card, which
+  previously just said this was coming later.
+- **AI Coach and Progress Insights now use it.** Both prompts accept an optional
+  `profile` block and only ever reference whichever fields are actually filled in
+  (same "don't invent data" rule the trend fields already followed) — Coach is told
+  to weigh protein needs against body weight/activity level and respect allergies
+  when suggesting foods; Insights uses it as interpretive context (e.g. a resting
+  heart rate reads differently at different ages) rather than restating it as its
+  own bullet.
+
 ## v0.8.0
 
 - **Fixed a production bug**: Progress's "Generate insights" threw

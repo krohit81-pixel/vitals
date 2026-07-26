@@ -89,7 +89,7 @@ export function AppHeader() {
           className="relative h-64 origin-top overflow-hidden will-change-transform sm:h-72 md:h-80"
         >
           <Image
-            src="/header.PNG"
+            src="/header_new.PNG"
             alt="Vitals — Eat right, move more, live better"
             fill
             priority

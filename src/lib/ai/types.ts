@@ -35,12 +35,27 @@ export interface CoachFeedback {
   recommendations: string[];
 }
 
+// Personal Details (Profile → Personal details, backed by the `users` table) —
+// optional and additive everywhere it's used: prompts should only reference
+// whichever fields are actually present, never assume or invent one that's
+// missing (same rule already followed for the trend fields below).
+export interface UserProfileContext {
+  age?: number;
+  gender?: "male" | "female" | "other" | "prefer_not_to_say";
+  heightCm?: number;
+  weightKg?: number;
+  activityLevel?: "sedentary" | "light" | "moderate" | "active" | "very_active";
+  dietType?: "vegetarian" | "vegan" | "non_vegetarian";
+  allergies?: string[];
+}
+
 export interface HealthInsightsContext {
   weightTrend?: { direction: "up" | "down" | "flat"; changeAmount: number; unit: string };
   restingHeartRateTrend?: { direction: "up" | "down" | "flat"; current: number };
   activityTrend?: { direction: "up" | "down" | "flat"; workoutsThisPeriod: number };
   nutritionConsistencyPct?: number;
   weekdayVsWeekendCalories?: { weekday: number; weekend: number };
+  profile?: UserProfileContext;
 }
 
 export interface HealthInsights {
@@ -76,4 +91,5 @@ export interface CoachPromptContext {
   goals: { calories: number; proteinG: number; carbsG: number; fatG: number; fibreG: number };
   actuals: { calories: number; proteinG: number; carbsG: number; fatG: number; fibreG: number };
   proteinConsistencyPct?: number;
+  profile?: UserProfileContext;
 }

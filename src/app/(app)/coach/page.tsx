@@ -22,19 +22,25 @@ export default async function CoachPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: goalsRow }, totals, workoutTotals, { data: latestFeedback }] = await Promise.all([
-    supabase.from("goals").select("*").eq("user_id", user!.id).single(),
-    getDailyTotalsRange(supabase, user!.id, weekStart, weekEnd),
-    getWorkoutTotalsRange(supabase, user!.id, weekStart, weekEnd),
-    supabase
-      .from("ai_feedback")
-      .select("summary, recommendations, created_at")
-      .eq("user_id", user!.id)
-      .eq("period", "weekly")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const [{ data: goalsRow }, totals, workoutTotals, { data: latestFeedback }, { data: profileRow }] =
+    await Promise.all([
+      supabase.from("goals").select("*").eq("user_id", user!.id).single(),
+      getDailyTotalsRange(supabase, user!.id, weekStart, weekEnd),
+      getWorkoutTotalsRange(supabase, user!.id, weekStart, weekEnd),
+      supabase
+        .from("ai_feedback")
+        .select("summary, recommendations, created_at")
+        .eq("user_id", user!.id)
+        .eq("period", "weekly")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("users")
+        .select("age, gender, height_cm, weight_kg, activity_level, diet_type, allergies")
+        .eq("id", user!.id)
+        .single(),
+    ]);
 
   const goals = goalsRow ?? {
     calorie_target: 2000,
@@ -92,6 +98,17 @@ export default async function CoachPage() {
             fibreG: Math.round(average(totals.map((t) => t.fibre_g))),
           },
           proteinConsistencyPct: consistencies.protein,
+          profile: profileRow
+            ? {
+                age: profileRow.age ?? undefined,
+                gender: profileRow.gender ?? undefined,
+                heightCm: profileRow.height_cm ?? undefined,
+                weightKg: profileRow.weight_kg ?? undefined,
+                activityLevel: profileRow.activity_level ?? undefined,
+                dietType: profileRow.diet_type ?? undefined,
+                allergies: profileRow.allergies ?? undefined,
+              }
+            : undefined,
         }}
         initial={
           latestFeedback

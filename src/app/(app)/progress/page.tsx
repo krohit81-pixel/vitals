@@ -45,6 +45,7 @@ export default async function ProgressPage({
     { data: weightLogs },
     stepsSeries,
     rhrSeries,
+    { data: profileRow },
   ] = await Promise.all([
     supabase.from("goals").select("*").eq("user_id", userId).single(),
     getDailyTotalsRange(supabase, userId, periodStart, today),
@@ -58,6 +59,11 @@ export default async function ProgressPage({
       .limit(1),
     getDailyMetricSeries(supabase, userId, "step_count", periodStart, today),
     getDailyMetricSeries(supabase, userId, "resting_heart_rate", periodStart, today),
+    supabase
+      .from("users")
+      .select("age, gender, height_cm, weight_kg, activity_level, diet_type, allergies")
+      .eq("id", userId)
+      .single(),
   ]);
 
   const { data: latestInsights } = await supabase
@@ -164,6 +170,17 @@ export default async function ProgressPage({
           ...(rhrStats.latest !== null && {
             restingHeartRateTrend: { direction: rhrDirection, current: Math.round(rhrStats.latest) },
           }),
+          profile: profileRow
+            ? {
+                age: profileRow.age ?? undefined,
+                gender: profileRow.gender ?? undefined,
+                heightCm: profileRow.height_cm ?? undefined,
+                weightKg: profileRow.weight_kg ?? undefined,
+                activityLevel: profileRow.activity_level ?? undefined,
+                dietType: profileRow.diet_type ?? undefined,
+                allergies: profileRow.allergies ?? undefined,
+              }
+            : undefined,
         }}
         initial={
           latestInsights

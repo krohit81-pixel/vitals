@@ -74,10 +74,15 @@ export default async function ProfilePage() {
         <CardHeader>
           <CardTitle>Personal details</CardTitle>
         </CardHeader>
-        <p className="text-sm text-black/50 dark:text-white/50">
-          Weight, height, age, gender, activity level, diet type, and allergies — editable form lands
-          in Milestone 3, backed by the <code className="rounded bg-black/5 px-1 dark:bg-white/10">users</code> table.
+        <p className="mb-3 text-sm text-black/50 dark:text-white/50">
+          Height, weight, age, gender, activity level, diet type, and allergies — used by AI Coach to
+          tailor its feedback and insights to you.
         </p>
+        <Link href="/profile/personal-details">
+          <Button variant="outline" className="w-full">
+            Edit personal details
+          </Button>
+        </Link>
       </Card>
 
       <form action={signOutAction}>
