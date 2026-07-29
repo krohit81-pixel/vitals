@@ -1,19 +1,25 @@
-import { Scale, HeartPulse, Footprints, Apple, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/navigation/app-header";
 import { HealthScoreRing } from "@/components/progress/health-score-ring";
+import { ScoreBreakdown, type ScoreBreakdownItem } from "@/components/progress/score-breakdown";
 import { RangeSelector } from "@/components/progress/range-selector";
-import { OverviewCard } from "@/components/progress/overview-card";
-import { MiniRing } from "@/components/progress/mini-ring";
+import { WeightCard } from "@/components/progress/weight-card";
+import { HeartRateCard } from "@/components/progress/heart-rate-card";
+import { ActivityCard } from "@/components/progress/activity-card";
+import { NutritionConsistencyCard } from "@/components/progress/nutrition-consistency-card";
+import { AchievementStrip } from "@/components/progress/achievement-strip";
 import { HealthInsightsCard } from "./health-insights";
-import { BMICard } from "@/components/progress/bmi-card";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
 import { getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
+import { getWeightSeries } from "@/lib/nutrition/get-weight-series";
 import { getDailyMetricSeries, summarizeSeries } from "@/lib/nutrition/get-health-metrics";
-import { calcWeekConsistencies, calcRhythmScore, trendDirection } from "@/lib/nutrition/coach-insights";
+import { calcConsistencyDetail } from "@/lib/nutrition/consistency";
+import { calcWeekConsistencyDetails, calcRhythmScore, trendDirection } from "@/lib/nutrition/coach-insights";
 import { computeStreakDays, currentStreakLength } from "@/lib/nutrition/streak";
 import { computeAchievements } from "@/lib/nutrition/achievements";
 import { addDays, rangeToDays, parseDateString, type RangeOption } from "@/lib/nutrition/date";
+
+const STEPS_GOAL = 8000;
 
 export default async function ProgressPage({
   searchParams,
@@ -44,6 +50,7 @@ export default async function ProgressPage({
     prevTotals,
     workoutTotals,
     { data: weightLogs },
+    weightSeries,
     stepsSeries,
     rhrSeries,
     { data: profileRow },
@@ -58,6 +65,7 @@ export default async function ProgressPage({
       .eq("user_id", userId)
       .order("measured_at", { ascending: false })
       .limit(1),
+    getWeightSeries(supabase, userId, periodStart, today),
     getDailyMetricSeries(supabase, userId, "step_count", periodStart, today),
     getDailyMetricSeries(supabase, userId, "resting_heart_rate", periodStart, today),
     supabase
@@ -93,20 +101,29 @@ export default async function ProgressPage({
     goal_weight_kg: null as number | null,
   };
 
-  // --- Nutrition ---
-  const consistencies = calcWeekConsistencies(totals, goals);
-  const prevConsistencies = calcWeekConsistencies(prevTotals, goals);
+  // --- Nutrition: hits/total per metric, direction-aware (calories/carbs/fat
+  // are budgets — "on track" means staying under; protein/fibre/water are
+  // floors — "on track" means reaching them). This is the one source of
+  // truth for both the Health Score breakdown and the Nutrition card below,
+  // so the two can never disagree about what "on track" meant that day. ---
+  const details = calcWeekConsistencyDetails(totals, goals);
+  const prevDetails = calcWeekConsistencyDetails(prevTotals, goals);
 
   // --- Activity ---
   const stepsStats = summarizeSeries(stepsSeries);
   const totalWorkouts = workoutTotals.reduce((sum, w) => sum + w.workoutCount, 0);
+  const stepsDetail = calcConsistencyDetail(
+    stepsSeries.map((p) => p.value),
+    STEPS_GOAL,
+    "min"
+  );
 
   // --- Heart ---
   const rhrStats = summarizeSeries(rhrSeries);
   const rhrDirection = trendDirection(rhrSeries.map((p) => p.value));
 
   // --- Weight ---
-  const currentWeight = weightLogs?.[0];
+  const currentWeight = weightLogs?.[0] ?? null;
 
   // --- BMI: prefer the latest logged weight (converted to kg if needed),
   // fall back to the weight on file in Personal details. Height only comes
@@ -127,12 +144,20 @@ export default async function ProgressPage({
   );
   const streak = currentStreakLength(streakDays, today);
 
-  // --- Health Score: composite of whatever signals are actually available ---
-  const scoreInputs = [consistencies.calories, consistencies.protein, consistencies.fibre];
-  if (stepsStats.average > 0) scoreInputs.push(Math.min((stepsStats.average / 8000) * 100, 100));
-  const healthScore = calcRhythmScore(scoreInputs);
+  // --- Health Score: composite of whatever signals are actually available.
+  // `scoreItems` drives BOTH the number and the on-screen breakdown, so the
+  // ring can never show a score the breakdown doesn't add up to. ---
+  const scoreItems: ScoreBreakdownItem[] = [
+    { label: "Calories", hits: details.calories.hits, total: details.calories.total, direction: "max", color: "#10B981" },
+    { label: "Protein", hits: details.protein.hits, total: details.protein.total, direction: "min", color: "#3B82F6" },
+    { label: "Fibre", hits: details.fibre.hits, total: details.fibre.total, direction: "min", color: "#059669" },
+  ];
+  if (stepsStats.average > 0) {
+    scoreItems.push({ label: "Steps goal", hits: stepsDetail.hits, total: stepsDetail.total, direction: "min", color: "#F59E0B" });
+  }
+  const healthScore = calcRhythmScore(scoreItems.map((i) => (i.total > 0 ? (i.hits / i.total) * 100 : 0)));
 
-  const prevScoreInputs = [prevConsistencies.calories, prevConsistencies.protein, prevConsistencies.fibre];
+  const prevScoreInputs = [prevDetails.calories.pct, prevDetails.protein.pct, prevDetails.fibre.pct];
   const prevHealthScore = calcRhythmScore(prevScoreInputs);
   // "vs 0" isn't a real comparison — only show a delta if the previous period
   // actually has logged data, otherwise it just misleadingly equals the
@@ -140,6 +165,7 @@ export default async function ProgressPage({
   const hasPreviousPeriodData = prevTotals.some((t) => t.calories > 0);
   const scoreDelta = hasPreviousPeriodData ? healthScore.score - prevHealthScore.score : null;
   const previousPeriodLabel = `${parseDateString(prevPeriodStart).toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${parseDateString(prevPeriodEnd).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+  const currentPeriodLabel = `${parseDateString(periodStart).toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${parseDateString(today).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
 
   const weightGoalProgressPct =
     currentWeight && earliestWeightLog && goals.goal_weight_kg && earliestWeightLog.weight !== goals.goal_weight_kg
@@ -155,7 +181,7 @@ export default async function ProgressPage({
   const achievements = computeAchievements({
     maxSteps: Math.max(0, ...stepsSeries.map((p) => p.value)),
     currentStreak: streak,
-    proteinConsistencyPct: consistencies.protein,
+    proteinConsistencyPct: details.protein.pct,
     weightGoalProgressPct,
     maxWorkoutsInAWeek: totalWorkouts,
   });
@@ -166,18 +192,33 @@ export default async function ProgressPage({
 
       <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Progress</h1>
 
-      <div className="glass-card flex flex-col items-center py-6">
-        <span className="mb-2 text-[11px] font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
-          Health Score
-        </span>
-        <HealthScoreRing score={healthScore.score} deltaVsPrevious={scoreDelta} previousPeriodLabel={previousPeriodLabel} />
-      </div>
+      <RangeSelector range={range} periodLabel={currentPeriodLabel} />
 
-      <RangeSelector range={range} />
+      <div className="glass-card p-5">
+        <div className="flex items-center gap-5">
+          <div className="shrink-0">
+            <HealthScoreRing score={healthScore.score} deltaVsPrevious={scoreDelta} previousPeriodLabel={previousPeriodLabel} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-black/40 dark:text-white/40">
+              Health score
+            </span>
+            <p className="mt-1 text-sm font-medium text-ink dark:text-cream-100">{healthScore.label}</p>
+            <p className="mt-1 text-xs leading-relaxed text-black/45 dark:text-white/45">
+              Average of {scoreItems.length} target{scoreItems.length === 1 ? "" : "s"} you hit this period — see the
+              breakdown below.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-black/[0.05] pt-4 dark:border-white/[0.06]">
+          <ScoreBreakdown items={scoreItems} />
+        </div>
+      </div>
 
       <HealthInsightsCard
         context={{
-          nutritionConsistencyPct: consistencies.calories,
+          nutritionConsistencyPct: details.calories.pct,
           activityTrend: { direction: totalWorkouts >= 3 ? "up" : "flat", workoutsThisPeriod: totalWorkouts },
           ...(rhrStats.latest !== null && {
             restingHeartRateTrend: { direction: rhrDirection, current: Math.round(rhrStats.latest) },
@@ -201,72 +242,22 @@ export default async function ProgressPage({
         }
       />
 
-      <BMICard bmi={bmi} />
-
       <div className="grid grid-cols-2 gap-3">
-        <OverviewCard
-          title="Weight"
-          icon={<Scale size={14} style={{ color: "#3B82F6" }} />}
-          value={currentWeight ? currentWeight.weight.toString() : "—"}
-          unit={currentWeight?.unit}
-          comparisonLabel={null}
-          comparisonDirection={null}
-          visual={weightGoalProgressPct !== null ? <MiniRing percent={weightGoalProgressPct} color="#3B82F6" /> : undefined}
-          color="#3B82F6"
-          href="/progress/weight"
-        />
-        <OverviewCard
-          title="Heart"
-          icon={<HeartPulse size={14} style={{ color: "#EF4444" }} />}
-          value={rhrStats.latest !== null ? Math.round(rhrStats.latest).toString() : "—"}
-          unit="bpm"
-          comparisonLabel={rhrStats.latest !== null ? `${rhrDirection === "flat" ? "Stable" : rhrDirection}` : null}
-          comparisonDirection={rhrDirection === "up" ? "down" : rhrDirection === "down" ? "up" : "flat"}
-          color="#EF4444"
-          href="/progress/metric/heart_rate"
-        />
-        <OverviewCard
-          title="Activity"
-          icon={<Footprints size={14} style={{ color: "#F59E0B" }} />}
-          value={stepsStats.average > 0 ? Math.round(stepsStats.average).toLocaleString() : "—"}
-          unit="steps/day"
-          comparisonLabel={`${totalWorkouts} workout${totalWorkouts === 1 ? "" : "s"}`}
-          comparisonDirection="flat"
-          color="#F59E0B"
-          href="/progress/metric/step_count"
-        />
-        <OverviewCard
-          title="Nutrition"
-          icon={<Apple size={14} style={{ color: "#10B981" }} />}
-          value={`${consistencies.protein}%`}
-          unit="protein"
-          comparisonLabel={`${consistencies.calories}% of days on calorie target`}
-          comparisonDirection="flat"
-          color="#10B981"
-          href="/progress/nutrition"
+        <HeartRateCard series={rhrSeries} />
+        <WeightCard
+          series={weightSeries}
+          currentWeight={currentWeight ? { weight: currentWeight.weight, unit: currentWeight.unit as "kg" | "lb" } : null}
+          goalWeightKg={goals.goal_weight_kg}
+          goalProgressPct={weightGoalProgressPct}
+          bmi={bmi}
         />
       </div>
 
-      <div>
-        <div className="mb-3 flex items-center gap-2">
-          <Trophy size={15} className="text-amber-500" />
-          <h2 className="font-display text-base font-medium text-ink dark:text-cream-100">Achievements</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {achievements.map((a) => (
-            <span
-              key={a.label}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                a.achieved
-                  ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
-                  : "bg-black/[0.04] text-black/35 dark:bg-white/[0.06] dark:text-white/35"
-              }`}
-            >
-              {a.label}
-            </span>
-          ))}
-        </div>
-      </div>
+      <ActivityCard series={stepsSeries} totalWorkouts={totalWorkouts} />
+
+      <NutritionConsistencyCard details={details} />
+
+      <AchievementStrip achievements={achievements} />
     </div>
   );
 }

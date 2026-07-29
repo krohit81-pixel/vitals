@@ -272,6 +272,7 @@ function TrendsView({
             unit="kcal"
             color="#10B981"
             target={goals.calorie_target}
+            direction="max"
             data={totals.map((t) => ({ date: t.date, value: t.calories }))}
           />
           <MetricTrendCard
@@ -279,6 +280,7 @@ function TrendsView({
             unit="g"
             color="#10B981"
             target={goals.protein_target_g}
+            direction="min"
             data={totals.map((t) => ({ date: t.date, value: t.protein_g }))}
           />
           <MetricTrendCard
@@ -286,6 +288,7 @@ function TrendsView({
             unit="g"
             color="#3B82F6"
             target={goals.carb_target_g}
+            direction="max"
             data={totals.map((t) => ({ date: t.date, value: t.carbs_g }))}
           />
           <MetricTrendCard
@@ -293,6 +296,7 @@ function TrendsView({
             unit="g"
             color="#F59E0B"
             target={goals.fat_target_g}
+            direction="max"
             data={totals.map((t) => ({ date: t.date, value: t.fat_g }))}
           />
           <MetricTrendCard
@@ -300,6 +304,7 @@ function TrendsView({
             unit="g"
             color="#10B981"
             target={goals.fibre_target_g}
+            direction="min"
             data={totals.map((t) => ({ date: t.date, value: t.fibre_g }))}
           />
           <MetricTrendCard
@@ -307,6 +312,7 @@ function TrendsView({
             unit="ml"
             color="#3B82F6"
             target={goals.water_target_ml}
+            direction="min"
             data={totals.map((t) => ({ date: t.date, value: t.water_ml }))}
           />
         </div>

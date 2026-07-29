@@ -1,4 +1,4 @@
-import { average, calcConsistency } from "./consistency";
+import { average, calcConsistencyDetail, type ConsistencyDetail } from "./consistency";
 
 // Re-exported because callers keep reasonably assuming this lives here
 // alongside the other week-level helpers — easier to fix the import surface
@@ -39,32 +39,61 @@ export function calcRhythmScore(consistencies: number[]): RhythmScore {
 }
 
 export interface WeekConsistencies {
+  /** "On track" here means stayed at or under budget — going over is the
+   * thing being avoided, so this is a "max" (ceiling) metric. */
   calories: number;
+  /** "On track" means reached the target — going over is still fine, so
+   * this is a "min" (floor) metric, same as fibre/water. */
   protein: number;
   fibre: number;
   water: number;
+  /** Budgets, like calories — going over is the thing being tracked. */
+  carbs: number;
+  fat: number;
 }
 
-export function calcWeekConsistencies(
-  totals: Array<{ calories: number; protein_g: number; fibre_g: number; water_ml: number }>,
-  goals: { calorie_target: number; protein_target_g: number; fibre_target_g: number; water_target_ml: number }
-): WeekConsistencies {
+export interface WeekConsistencyDetails {
+  calories: ConsistencyDetail;
+  protein: ConsistencyDetail;
+  fibre: ConsistencyDetail;
+  water: ConsistencyDetail;
+  carbs: ConsistencyDetail;
+  fat: ConsistencyDetail;
+}
+
+type WeekTotalsInput = { calories: number; protein_g: number; fibre_g: number; water_ml: number; carbs_g: number; fat_g: number };
+type WeekGoalsInput = {
+  calorie_target: number;
+  protein_target_g: number;
+  fibre_target_g: number;
+  water_target_ml: number;
+  carb_target_g: number;
+  fat_target_g: number;
+};
+
+/** The single source of truth for "on track" per nutrition metric — hits,
+ * total days, and which direction "on track" even means for that metric.
+ * `calcWeekConsistencies` below is a thin percent-only view over this, kept
+ * for callers that only ever wanted the number. */
+export function calcWeekConsistencyDetails(totals: WeekTotalsInput[], goals: WeekGoalsInput): WeekConsistencyDetails {
   return {
-    calories: calcConsistency(
-      totals.map((t) => t.calories),
-      goals.calorie_target
-    ),
-    protein: calcConsistency(
-      totals.map((t) => t.protein_g),
-      goals.protein_target_g
-    ),
-    fibre: calcConsistency(
-      totals.map((t) => t.fibre_g),
-      goals.fibre_target_g
-    ),
-    water: calcConsistency(
-      totals.map((t) => t.water_ml),
-      goals.water_target_ml
-    ),
+    calories: calcConsistencyDetail(totals.map((t) => t.calories), goals.calorie_target, "max"),
+    protein: calcConsistencyDetail(totals.map((t) => t.protein_g), goals.protein_target_g, "min"),
+    fibre: calcConsistencyDetail(totals.map((t) => t.fibre_g), goals.fibre_target_g, "min"),
+    water: calcConsistencyDetail(totals.map((t) => t.water_ml), goals.water_target_ml, "min"),
+    carbs: calcConsistencyDetail(totals.map((t) => t.carbs_g), goals.carb_target_g, "max"),
+    fat: calcConsistencyDetail(totals.map((t) => t.fat_g), goals.fat_target_g, "max"),
+  };
+}
+
+export function calcWeekConsistencies(totals: WeekTotalsInput[], goals: WeekGoalsInput): WeekConsistencies {
+  const details = calcWeekConsistencyDetails(totals, goals);
+  return {
+    calories: details.calories.pct,
+    protein: details.protein.pct,
+    fibre: details.fibre.pct,
+    water: details.water.pct,
+    carbs: details.carbs.pct,
+    fat: details.fat.pct,
   };
 }

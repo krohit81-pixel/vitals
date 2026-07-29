@@ -50,9 +50,9 @@ export default async function ProgressNutritionPage({
 
       <MacroSplitCard data={totals.map((t) => ({ date: t.date, fatG: t.fat_g, carbsG: t.carbs_g, proteinG: t.protein_g }))} />
 
-      <MetricTrendCard label="Calories" unit="kcal" color="#10B981" target={goals.calorie_target} data={totals.map((t) => ({ date: t.date, value: t.calories }))} />
-      <MetricTrendCard label="Protein" unit="g" color="#10B981" target={goals.protein_target_g} data={totals.map((t) => ({ date: t.date, value: t.protein_g }))} />
-      <MetricTrendCard label="Water" unit="ml" color="#3B82F6" target={goals.water_target_ml} data={totals.map((t) => ({ date: t.date, value: t.water_ml }))} />
+      <MetricTrendCard label="Calories" unit="kcal" color="#10B981" target={goals.calorie_target} direction="max" data={totals.map((t) => ({ date: t.date, value: t.calories }))} />
+      <MetricTrendCard label="Protein" unit="g" color="#10B981" target={goals.protein_target_g} direction="min" data={totals.map((t) => ({ date: t.date, value: t.protein_g }))} />
+      <MetricTrendCard label="Water" unit="ml" color="#3B82F6" target={goals.water_target_ml} direction="min" data={totals.map((t) => ({ date: t.date, value: t.water_ml }))} />
     </div>
   );
 }

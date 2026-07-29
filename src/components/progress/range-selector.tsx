@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const OPTIONS: RangeOption[] = ["7d", "30d", "90d", "1y"];
 
-export function RangeSelector({ range }: { range: RangeOption }) {
+export function RangeSelector({ range, periodLabel }: { range: RangeOption; periodLabel?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -30,23 +30,28 @@ export function RangeSelector({ range }: { range: RangeOption }) {
   };
 
   return (
-    <div className="no-scrollbar flex items-center gap-1 overflow-x-auto rounded-xl bg-black/[0.04] p-1 dark:bg-white/[0.06]">
-      {OPTIONS.map((opt) => (
-        <button
-          key={opt}
-          onClick={() => setRange(opt)}
-          disabled={pending}
-          className={cn(
-            "relative flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-70",
-            range === opt ? "bg-white shadow-soft dark:bg-graphite-50" : "text-black/50 dark:text-white/50"
-          )}
-        >
-          {pending && pendingOption === opt && (
-            <LoadingRing size={11} className="text-emerald-600 dark:text-emerald-400" />
-          )}
-          {RANGE_LABELS[opt]}
-        </button>
-      ))}
+    <div>
+      <div className="no-scrollbar flex items-center gap-1 overflow-x-auto rounded-xl bg-black/[0.04] p-1 dark:bg-white/[0.06]">
+        {OPTIONS.map((opt) => (
+          <button
+            key={opt}
+            onClick={() => setRange(opt)}
+            disabled={pending}
+            className={cn(
+              "relative flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-70",
+              range === opt ? "bg-white shadow-soft dark:bg-graphite-50" : "text-black/50 dark:text-white/50"
+            )}
+          >
+            {pending && pendingOption === opt && (
+              <LoadingRing size={11} className="text-emerald-600 dark:text-emerald-400" />
+            )}
+            {RANGE_LABELS[opt]}
+          </button>
+        ))}
+      </div>
+      {/* Always shows exactly which days are included — the ambiguity of
+          "7 days" alone (7 days as of when?) was the actual complaint. */}
+      {periodLabel && <p className="mt-1.5 px-1 text-xs text-black/40 dark:text-white/40">{periodLabel}</p>}
     </div>
   );
 }

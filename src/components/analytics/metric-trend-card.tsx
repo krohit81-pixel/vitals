@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { Card } from "@/components/ui/card";
-import { average, calcConsistency } from "@/lib/nutrition/consistency";
+import { average, calcConsistency, type ConsistencyDirection } from "@/lib/nutrition/consistency";
 import { parseDateString } from "@/lib/nutrition/date";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,11 @@ export interface MetricTrendCardProps {
   /** Daily target, if this metric has one — drives the reference line, the
    * Under/Over headline, and per-bar shading. */
   target?: number;
+  /** Whether `target` is a floor to reach ("min" — protein, fibre, water) or
+   * a budget to stay under ("max" — calories, carbs, fat). Only affects the
+   * "X% consistent" badge; the Under/Over headline is already direction-
+   * neutral. Defaults to "min" to match this component's original behavior. */
+  direction?: ConsistencyDirection;
   /**
    * How to display the KPI number. A string, not a function — this component
    * is rendered from Server Components (Dashboard), and Next.js can't pass a
@@ -40,12 +45,13 @@ export function MetricTrendCard({
   color,
   data,
   target,
+  direction = "min",
   format = "integer",
 }: MetricTrendCardProps) {
   const formatValue = FORMATTERS[format];
   const values = data.map((d) => d.value);
   const avg = average(values);
-  const consistency = target ? calcConsistency(values, target) : undefined;
+  const consistency = target ? calcConsistency(values, target, direction) : undefined;
   const showDailyTicks = data.length <= 8;
 
   // Under/Over framing, mirroring a budget-style gauge: how far the average
@@ -92,7 +98,7 @@ export function MetricTrendCard({
                 : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
             )}
           >
-            {consistency}% consistent
+            {consistency}% {direction === "max" ? "within budget" : "consistent"}
           </span>
         )}
       </div>

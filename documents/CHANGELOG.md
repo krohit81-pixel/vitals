@@ -2,6 +2,34 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.8.3
+
+- **Fixed a real scoring bug**: consistency checks (Health Score, the nutrition
+  breakdown, and the Dashboard/Nutrition trend cards) treated every target as a
+  floor to reach — including calories, carbs, and fat, which are budgets you're
+  meant to stay *under*. A 4,000 kcal day against a 2,000 kcal target was counting
+  as "on track." `calcConsistency` now takes a direction (`"min"` for
+  protein/fibre/water/steps, `"max"` for calories/carbs/fat) and every call site
+  was updated to pass the right one.
+- **Progress tab rebuilt** end to end, starting from a reviewed HTML prototype:
+  - Health Score now shows what it's made of — a breakdown of hit/total days per
+    metric, with the direction each one is chasing, instead of an unexplained
+    number out of 100.
+  - Resting Heart Rate had a real bug: the trend arrow and the trend label were
+    computed two different ways and could contradict each other. Rebuilt as one
+    computation feeding both, plus a sparkline and an honest "log a few more
+    readings" state instead of guessing a trend from 2-3 points.
+  - Weight and BMI merged into one card (same underlying number), with a
+    sparkline and a goal-progress delta that only colors green/amber when a goal
+    is actually set — weight loss isn't universally "good," so it's neutral
+    without one.
+  - Activity now shows a real 7-day steps bar chart instead of just an average.
+  - Nutrition consistency card added (calories, protein, carbs, fat, fibre,
+    water), each labeled with its actual direction.
+  - Range selector now always shows the exact date span under it (e.g. "Jul
+    23 – Jul 29"), so "7 days" is never ambiguous about which 7 days.
+  - Achievements moved into a horizontal scroll strip.
+
 ## v0.8.2
 
 - **Backdating support**: meal entries (via a "Logged at" datetime field on the
