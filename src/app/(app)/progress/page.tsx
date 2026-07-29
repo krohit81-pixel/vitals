@@ -6,6 +6,7 @@ import { RangeSelector } from "@/components/progress/range-selector";
 import { OverviewCard } from "@/components/progress/overview-card";
 import { MiniRing } from "@/components/progress/mini-ring";
 import { HealthInsightsCard } from "./health-insights";
+import { BMICard } from "@/components/progress/bmi-card";
 import { getDailyTotalsRange } from "@/lib/nutrition/get-range-totals";
 import { getWorkoutTotalsRange } from "@/lib/nutrition/get-workout-totals";
 import { getDailyMetricSeries, summarizeSeries } from "@/lib/nutrition/get-health-metrics";
@@ -107,6 +108,17 @@ export default async function ProgressPage({
   // --- Weight ---
   const currentWeight = weightLogs?.[0];
 
+  // --- BMI: prefer the latest logged weight (converted to kg if needed),
+  // fall back to the weight on file in Personal details. Height only comes
+  // from the profile — there's no other source for it in the app.
+  const weightKgForBmi = currentWeight
+    ? currentWeight.unit === "lb"
+      ? currentWeight.weight * 0.453592
+      : currentWeight.weight
+    : (profileRow?.weight_kg ?? null);
+  const heightM = profileRow?.height_cm ? profileRow.height_cm / 100 : null;
+  const bmi = heightM && weightKgForBmi ? weightKgForBmi / (heightM * heightM) : null;
+
   // --- Streak (for health score + achievements) ---
   const burnedByDate = new Map(workoutTotals.map((w) => [w.date, w.caloriesBurned]));
   const streakDays = computeStreakDays(
@@ -188,6 +200,8 @@ export default async function ProgressPage({
             : null
         }
       />
+
+      <BMICard bmi={bmi} />
 
       <div className="grid grid-cols-2 gap-3">
         <OverviewCard

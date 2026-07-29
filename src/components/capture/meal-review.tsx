@@ -5,12 +5,16 @@ import type { MealAnalysis } from "@/lib/ai/types";
 import { MEAL_TYPE_LABELS, type MealType } from "@/lib/nutrition/meal-type";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export function MealReview({
   analysis,
   mealType,
   onMealTypeChange,
+  loggedAt,
+  onLoggedAtChange,
+  maxLoggedAt,
   onClarify,
   onSave,
   refining,
@@ -19,6 +23,9 @@ export function MealReview({
   analysis: MealAnalysis;
   mealType: MealType;
   onMealTypeChange: (type: MealType) => void;
+  loggedAt: string;
+  onLoggedAtChange: (value: string) => void;
+  maxLoggedAt: string;
   onClarify: (answers: Array<{ question: string; answer: string }>) => void;
   onSave: () => void;
   refining: boolean;
@@ -52,6 +59,17 @@ export function MealReview({
             {MEAL_TYPE_LABELS[type]}
           </button>
         ))}
+      </div>
+
+      {/* Logged at — defaults to now, editable for backdating a past meal. */}
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-black/50 dark:text-white/50">Logged at</label>
+        <Input
+          type="datetime-local"
+          value={loggedAt}
+          max={maxLoggedAt || undefined}
+          onChange={(e) => onLoggedAtChange(e.target.value)}
+        />
       </div>
 
       {/* Confidence + explanation */}

@@ -1,11 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, ImagePlus, PenLine, Mic, Barcode, Droplets, Dumbbell, Scale, X, ArrowLeft, Check } from "lucide-react";
 import { logWaterAction } from "@/lib/nutrition/water-actions";
 import { logWeightAction } from "@/app/(app)/weight/actions";
-import { localTodayString } from "@/lib/nutrition/date";
+import { localTodayString, parseDateString } from "@/lib/nutrition/date";
+
+/** Combines a "YYYY-MM-DD" date with the current time-of-day, so backdated
+ * entries get a plausible timestamp and today's entries still get "now". */
+function combineDateWithNow(dateStr: string) {
+  const now = new Date();
+  const day = parseDateString(dateStr);
+  day.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+  return day.toISOString();
+}
 
 const ACTIONS = [
   { icon: Camera, label: "Take Photo", enabled: true },
@@ -40,11 +49,26 @@ export function CaptureSheet({
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  // Defaults to today, editable for backdating a past water/weight entry.
+  // Set client-side in an effect (not directly in render) — same "today"
+  // timezone rule as everywhere else in this app.
+  const [today, setToday] = useState("");
+  const [waterDate, setWaterDate] = useState("");
+  const [weightDate, setWeightDate] = useState("");
+  useEffect(() => {
+    const t = localTodayString();
+    setToday(t);
+    setWaterDate(t);
+    setWeightDate(t);
+  }, []);
+
   const reset = () => {
     setView("menu");
     setCustomMl("");
     setWeightValue("");
     setSaved(false);
+    setWaterDate(today);
+    setWeightDate(today);
   };
 
   const handleClose = () => {
@@ -55,7 +79,7 @@ export function CaptureSheet({
 
   const addWater = (ml: number) => {
     startTransition(async () => {
-      await logWaterAction(ml, localTodayString());
+      await logWaterAction(ml, waterDate || localTodayString());
       setSaved(true);
       setTimeout(handleClose, 700);
     });
@@ -65,7 +89,7 @@ export function CaptureSheet({
     const value = Number(weightValue);
     if (!value) return;
     startTransition(async () => {
-      await logWeightAction(value, unit, new Date().toISOString());
+      await logWeightAction(value, unit, combineDateWithNow(weightDate || localTodayString()));
       setSaved(true);
       setTimeout(handleClose, 900);
     });
@@ -148,6 +172,17 @@ export function CaptureSheet({
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-xs font-medium text-black/50 dark:text-white/50">Date</label>
+                      <input
+                        type="date"
+                        value={waterDate}
+                        max={today || undefined}
+                        onChange={(e) => setWaterDate(e.target.value)}
+                        className="h-9 rounded-lg border border-black/[0.08] bg-white/70 px-2.5 text-sm outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                      />
+                    </div>
+
                     <div className="grid grid-cols-3 gap-3">
                       {WATER_PRESETS_ML.map((ml) => (
                         <button
@@ -211,6 +246,17 @@ export function CaptureSheet({
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-xs font-medium text-black/50 dark:text-white/50">Date</label>
+                      <input
+                        type="date"
+                        value={weightDate}
+                        max={today || undefined}
+                        onChange={(e) => setWeightDate(e.target.value)}
+                        className="h-9 rounded-lg border border-black/[0.08] bg-white/70 px-2.5 text-sm outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                      />
+                    </div>
+
                     <div className="flex items-center gap-2">
                       <input
                         type="number"

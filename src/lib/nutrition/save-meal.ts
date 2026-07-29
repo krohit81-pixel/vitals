@@ -50,10 +50,12 @@ export interface PersistMealInput {
   analysis: MealAnalysis;
   /** Storage path within the meal-photos bucket, if this meal came with a photo. */
   storagePath?: string;
+  /** ISO timestamp to log this meal against, for backdating. Defaults to now. */
+  loggedAtIso?: string;
 }
 
 export async function persistMeal(supabase: Client, input: PersistMealInput) {
-  const { userId, mealType, source, rawInput, analysis, storagePath } = input;
+  const { userId, mealType, source, rawInput, analysis, storagePath, loggedAtIso } = input;
 
   let mealImageId: string | null = null;
   if (storagePath) {
@@ -66,7 +68,7 @@ export async function persistMeal(supabase: Client, input: PersistMealInput) {
     mealImageId = image.id;
   }
 
-  const now = new Date();
+  const loggedAt = loggedAtIso ? new Date(loggedAtIso) : new Date();
   const { data: meal, error: mealError } = await supabase
     .from("meal_logs")
     .insert({
@@ -85,14 +87,14 @@ export async function persistMeal(supabase: Client, input: PersistMealInput) {
       sodium_mg: analysis.totals.sodiumMg,
       confidence: analysis.overallConfidence,
       ai_explanation: analysis.explanation,
-      logged_at: now.toISOString(),
+      logged_at: loggedAt.toISOString(),
     })
     .select()
     .single();
 
   if (mealError) throw mealError;
 
-  await recomputeDailyTotals(supabase, userId, toDateString(now));
+  await recomputeDailyTotals(supabase, userId, toDateString(loggedAt));
 
   return meal;
 }

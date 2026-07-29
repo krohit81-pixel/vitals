@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { PhotoCapture } from "@/components/capture/photo-capture";
@@ -18,6 +18,11 @@ import {
 } from "./actions";
 
 type Mode = "photo" | "upload" | "manual" | "voice";
+
+function toDatetimeLocal(date: Date) {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 const TITLES: Record<Mode, string> = {
   photo: "Take a photo",
@@ -37,6 +42,16 @@ export function NewMealFlow({ shortcuts }: { shortcuts: string[] }) {
   const [rawInput, setRawInput] = useState<string | undefined>(undefined);
   const [status, setStatus] = useState<"idle" | "analyzing" | "refining" | "saving" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  // Computed client-side only (in an effect, not directly in render) — same
+  // reasoning as EditMealForm's toDatetimeLocal: the server doesn't know the
+  // viewer's timezone.
+  const [loggedAt, setLoggedAt] = useState("");
+  const [maxLoggedAt, setMaxLoggedAt] = useState("");
+  useEffect(() => {
+    const now = toDatetimeLocal(new Date());
+    setLoggedAt(now);
+    setMaxLoggedAt(now);
+  }, []);
 
   const handlePhotoAnalyze = async (imageBase64: string, mimeType: string) => {
     setStatus("analyzing");
@@ -89,6 +104,7 @@ export function NewMealFlow({ shortcuts }: { shortcuts: string[] }) {
         analysis,
         imageBase64: pendingImage?.base64,
         imageMimeType: pendingImage?.mimeType,
+        loggedAtIso: loggedAt ? new Date(loggedAt).toISOString() : undefined,
       });
       router.push("/meals");
     } catch (err) {
@@ -152,6 +168,9 @@ export function NewMealFlow({ shortcuts }: { shortcuts: string[] }) {
           analysis={analysis}
           mealType={mealType}
           onMealTypeChange={setMealType}
+          loggedAt={loggedAt}
+          onLoggedAtChange={setLoggedAt}
+          maxLoggedAt={maxLoggedAt}
           onClarify={handleClarify}
           onSave={handleSave}
           refining={status === "refining"}

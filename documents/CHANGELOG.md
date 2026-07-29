@@ -2,6 +2,23 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.8.2
+
+- **Backdating support**: meal entries (via a "Logged at" datetime field on the
+  Review screen, defaulting to now, capped so you can't pick a future time) and the
+  quick-log sheet's Water and Weight views (each got a "Date" field, defaulting to
+  today) can now be logged against a past date instead of only "right now." Daily
+  totals recompute for whichever date the entry actually lands on.
+- **Logo/app icon refreshed again**, this time cropped from the central ring badge
+  in `header_new.PNG` (the current header artwork) rather than the older standalone
+  logo file, so the icon and header now share one visual identity. Previous icon set
+  backed up under `public/previous logo/v0.8/`.
+- **BMI card added to Progress**, computed from height in Personal Details and the
+  most recent logged weight (falling back to the weight on file in Personal Details
+  if nothing's been logged yet). Shows the standard category badge (Underweight /
+  Normal / Overweight / Obese); if height hasn't been entered yet, shows a prompt
+  linking to Personal Details instead of a broken number.
+
 ## v0.8.1
 
 - **Header artwork swapped** to `header_new.PNG` (lighter/less saturated) per user

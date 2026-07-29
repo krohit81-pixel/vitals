@@ -46,6 +46,8 @@ export interface SaveMealArgs {
   /** Present only when source === "photo". */
   imageBase64?: string;
   imageMimeType?: string;
+  /** ISO timestamp to log this meal against, for backdating. Defaults to now. */
+  loggedAtIso?: string;
 }
 
 export async function saveMealAction(args: SaveMealArgs) {
@@ -71,6 +73,7 @@ export async function saveMealAction(args: SaveMealArgs) {
     rawInput: args.rawInput,
     analysis: args.analysis,
     storagePath,
+    loggedAtIso: args.loggedAtIso,
   });
 
   revalidatePath("/meals");
