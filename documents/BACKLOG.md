@@ -2,7 +2,10 @@
 
 Deferred items and known limitations only. **For what's already shipped, see
 `CHANGELOG.md`** — this file used to mix both together, which got confusing about
-which one was current; now it's just the "not built yet" list.
+which one was current; now it's just the "not built yet" list. **For what's actively
+requested next (not just deferred-for-later)**, see the "Requested next" section in
+`CHANGES.md` — currently the v1.5 hamburger menu / Weekly Reports / display settings
+ask, which has open questions that need answering before it's built.
 
 ---
 
@@ -34,20 +37,36 @@ which one was current; now it's just the "not built yet" list.
   (wrongly-skipped real workouts) show up in practice, the tolerances in
   `isLikelyDuplicateOfManual()` (`health-import.ts`) are the place to tune.
 
-- **Visual redesign (vivid gradients/rings/slider-thumbs) only covers `CalorieRing`,
-  `HealthScoreRing`, and `MacroCard` so far.** `OverviewCard` (Progress tab) and the
-  trend chart components (`MetricTrendCard`, `ComparisonTrendCard`) still have the
-  earlier, more muted visual treatment — natural next step if the new direction is
-  working well.
+- **`ComparisonTrendCard` and `MacroSplitCard` still have the earlier, more muted
+  visual treatment** — everything on the Progress tab itself was redesigned in v0.8.3
+  (Health Score breakdown, Weight/BMI, Heart Rate, Activity, Nutrition Consistency,
+  Achievements), and Dashboard's `CalorieRing`/`MacroCard` got the vivid-gradient
+  treatment earlier, but the comparison/split charts on Dashboard haven't been
+  revisited. Natural next step if the newer direction is working well.
 
 - **Achievements are a small fixed set of deterministic checks**, not a full badge/
   gamification system (10k steps, 5-day streak, protein-goal-7-days, active week,
   weight-goal-50%). Extend `computeAchievements()` in `achievements.ts` for more.
 
-- **Health Score formula only weighs nutrition/activity consistency.** Deliberately
-  doesn't try to score heart-rate metrics as "good/bad," since that edges toward
-  medical judgment the app isn't positioned to make. Worth revisiting the exact
-  weighting once there's real usage data to calibrate against.
+- **Health Score formula only weighs nutrition/activity consistency** (calories,
+  protein, fibre, and steps when available — see the breakdown card on Progress for
+  exactly which ones and why). Deliberately doesn't try to score heart-rate metrics as
+  "good/bad," since that edges toward medical judgment the app isn't positioned to
+  make. Worth revisiting the exact weighting (and whether carbs/fat/water should count
+  toward the score too, not just the separate Nutrition Consistency card) once there's
+  real usage data to calibrate against.
+
+- **BMI is shown as a single "Underweight/Normal/Overweight/Obese" badge with no
+  further framing.** Standard categories, no per-user context (e.g. athletes with high
+  muscle mass, pregnancy, etc.) — fine for a general-audience app, but worth a caveat
+  in the UI copy if this ever gets scrutiny. Not currently linked to any coaching
+  behavior; it's informational only on the Weight card.
+
+- **`get-weight-series.ts` assumes one weight unit per user for charting** — mixing
+  kg and lb entries within the same period would plot inconsistently on the Weight
+  card's sparkline. Not currently possible from the UI (unit is a per-entry field, but
+  in practice everyone sticks to their profile's preferred unit), but there's no
+  guard against it.
 
 - **AI Coach's "Ask Coach" chat interface** — explicitly deferred in favor of the
   static/visual pieces (hero summary, insight cards, rhythm score) first. The AI

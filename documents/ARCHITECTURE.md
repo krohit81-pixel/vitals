@@ -95,6 +95,62 @@ there). It's re-exported from `coach-insights.ts` now specifically to remove the
 but if you're adding a new file that needs it, either import path works; the point is
 just to not assume a *third* location.
 
+### 5. Consistency checks need a direction — don't default to "reach the target"
+
+`calcConsistency` / `calcConsistencyDetail` (`src/lib/nutrition/consistency.ts`) take a
+`direction: "min" | "max"`. **This was a real, shipped bug** (fixed v0.8.3): every
+target-based metric — including calories, carbs, and fat — was checked with "did this
+reach at least 80% of target," which meant *eating way over budget still counted as
+consistent*. The fix:
+
+- **`"min"`** — protein, fibre, water, steps: a floor. Reaching the target (or getting
+  close) is a hit; exceeding it is still fine, unbounded above.
+- **`"max"`** — calories, carbs, fat: a budget. Staying at or under the target (with
+  ~20% grace) is a hit; exceeding it is the failure mode being tracked.
+
+`calcWeekConsistencyDetails()` in `coach-insights.ts` is the one place all six
+nutrition metrics' directions are assigned — treat it as the source of truth rather
+than re-deciding direction ad hoc at a new call site. Before adding *any* new
+target/goal-based metric anywhere in the app (a new macro, a new health metric with a
+daily target, etc.), decide explicitly which direction it is — don't let it silently
+default to `"min"`.
+
+### 6. Server-rendered full-bleed elements need exactly one root node
+
+`AppHeader` uses a negative-margin trick (`-mx-4 -mt-6 md:-mx-8 md:-mt-10`) to escape
+its parent page's padding and bleed edge-to-edge, and every page renders it as the
+*first* child inside a `space-y-N` container. This broke once (v0.8.0): the component
+briefly returned a Fragment (`<>...</>`) wrapping two sibling nodes (a fixed compact bar
++ the hero banner) instead of one real `<div>`. React then rendered both as direct
+children of the `space-y-N` container, so Tailwind's `space-y` utility (which adds
+margin-top to every child after the first) put an unwanted margin on the second node,
+breaking the negative-margin cancellation. **Rule:** any component relying on being
+"exactly the Nth child" of a `space-y`/`gap` container — for full-bleed tricks,
+`:first-child`/`:last-child` selectors, or similar — must return a single real DOM root,
+never a Fragment with multiple top-level siblings.
+
+### 7. New tables in `schema.sql` don't reach the live database by themselves
+
+This sandbox has the Supabase anon key and service-role key (for querying data as the
+app does), but **no Postgres connection string and no Supabase management token** — so
+there's no way to actually run a migration against the live database from here. Adding
+a table to `schema.sql` only updates the *source of truth file*; someone still has to
+paste the new SQL into the Supabase SQL Editor (or re-run the whole file) for
+PostgREST's schema cache to know about it. Symptom if this is missed: `PGRST205 —
+Could not find the table 'public.X' in the schema cache` at runtime, even though the
+code and `schema.sql` both look correct (hit once with `health_insights` in v0.8.0).
+**When adding a new table:** call this out explicitly as a required manual step, don't
+assume editing `schema.sql` was sufficient.
+
+### 8. This sandbox can't run a full `next build` — verify with `tsc` + `eslint` instead
+
+A production Next.js build reliably exceeds this environment's per-command timeout,
+even with a warm `.next/cache` (confirmed via both foreground and backgrounded attempts
+— background processes don't survive between separate tool calls here either). The
+working verification gate is `npx tsc --noEmit` + `npx next lint`, both of which
+consistently finish and catch the vast majority of real issues; the person running this
+locally does the actual `npm run build` themselves before pushing.
+
 ---
 
 ## AI provider abstraction (`src/lib/ai`)
@@ -124,6 +180,14 @@ clarifyingQuestions` carries `options: string[]` per question (2-4 concrete choi
 questions like "does this contain water or milk?" don't have an honest yes/no answer.
 `json.ts` has a defensive fallback to `["Yes", "No"]` only if a provider ever omits
 options entirely.
+
+**Personal details feed prompts as optional context, never invented.** `UserProfileContext`
+(`types.ts`) is folded into both `CoachPromptContext` and `HealthInsightsContext`. The
+shared `profileLines()` helper in `prompts.ts` only ever renders fields the user
+actually filled in on `/profile/personal-details` — never fabricates an age, activity
+level, etc. to fill a gap. If you add a new profile field that should reach the AI,
+add it to `UserProfileContext` and `profileLines()` once; both Coach and Progress
+Insights pick it up automatically since they share the same builder.
 
 ---
 
@@ -186,6 +250,23 @@ and whatever the action's own detail page is).
 
 ---
 
+## Dead code that can't be deleted from this sandbox
+
+A recurring, environment-specific issue: files superseded by a redesign sometimes
+can't be `rm`'d here (`Operation not permitted` on this mounted folder), so they're
+left in place rather than fought over. None of these are imported anywhere live —
+verify with a repo-wide search before assuming otherwise, since this list will drift:
+`src/components/navigation/top-banner.tsx` (superseded by `app-header.tsx`),
+`src/components/progress/overview-card.tsx`, `mini-ring.tsx`, and `bmi-card.tsx`
+(superseded by the v0.8.3 Progress redesign's `weight-card.tsx` etc.),
+`src/app/(app)/coach/ai-feedback-skeleton.tsx` and
+`src/app/(app)/progress/health-insights-skeleton.tsx`, and
+`src/components/navigation/floating-controls.tsx` (from the v0.7.3 header design that
+was later reverted). If you have real filesystem delete access in your environment,
+these are all safe to remove.
+
+---
+
 ## Database schema overview
 
 Full source of truth is `supabase/schema.sql` — this is a map, not a substitute for
@@ -194,17 +275,18 @@ file — add new tables to that loop's array, don't hand-write per-table policie
 
 | Table | Purpose |
 |---|---|
-| `users` | Profile info, extends `auth.users`. Auto-created via `handle_new_user()` trigger on signup. |
+| `users` | Profile info, extends `auth.users`. Auto-created via `handle_new_user()` trigger on signup. Since v0.8.1 also holds the Personal Details fields — `age`, `gender`, `height_cm`, `weight_kg`, `activity_level`, `diet_type`, `allergies`, `units` — editable at `/profile/personal-details`, fed into AI Coach/Progress Insights prompts as optional context and used to compute BMI on Progress. |
 | `goals` | Daily targets (calories/macros/water/goal weight). Auto-created on signup with sane defaults. |
-| `meal_logs` | Logged meals — items, macros, confidence, AI explanation, source (photo/manual/voice). |
+| `meal_logs` | Logged meals — items, macros, confidence, AI explanation, source (photo/manual/voice). `logged_at` is user-editable/backdatable (v0.8.2), not locked to insert time. |
 | `meal_images` | Storage paths for meal photos (private bucket, signed URLs on read). |
-| `daily_totals` | Recomputed from `meal_logs` on every save/delete — source of truth is always `meal_logs`, this is a denormalized rollup for fast range queries. |
-| `weight_logs` | Weight entries — rebuilt once already (see `CHANGELOG.md`), current shape: `weight`, `unit`, `measured_at`, `notes`. |
+| `daily_totals` | Recomputed from `meal_logs` on every save/edit/delete, for whichever date the meal actually landed on (not always "today," since meals can be backdated) — source of truth is always `meal_logs`, this is a denormalized rollup for fast range queries. |
+| `weight_logs` | Weight entries — rebuilt once already (see `CHANGELOG.md`), current shape: `weight`, `unit`, `measured_at`, `notes`. In `schema.sql` it's a `DROP TABLE IF EXISTS ... CASCADE` immediately followed by an unconditional `CREATE TABLE` (not `IF NOT EXISTS`) — deliberate, since a plain `CREATE TABLE IF NOT EXISTS` would silently no-op a shape change on a database that already had the Milestone-1 version of this table. A duplicate, dead `IF NOT EXISTS` create for the old shape used to sit earlier in the file too; removed in v0.8.3 cleanup since the drop+recreate below it always won anyway. |
 | `workout_logs` | Manual + imported workouts. `source` (`manual`/`apple_health`) and `health_workout_id` exist specifically so a future real HealthKit integration has somewhere to plug in without a migration. |
 | `health_metrics` | Raw imported HealthSave readings (steps, heart rate, HRV, etc.). `metric` is plain text, not an enum — new metric types need zero migration. `recorded_at` (true instant) + `recorded_date` (wall-clock date) are both stored — see timezone section above for why. |
 | `meal_shortcuts` | User-managed quick-add phrases for Manual Entry. Seeded with 4 defaults on signup. |
 | `settings` | Dark mode, notification prefs. (Also briefly held Apple Health Shortcuts-bridge fields — removed along with that feature; check `CHANGELOG.md` if you see references to it in old docs.) |
-| `ai_feedback` | Present in schema, not currently written to by any code path — predates the Coach/Progress insights actually being wired up as on-the-fly LLM calls rather than persisted rows. |
+| `ai_feedback` | AI Coach's generated summary + recommendations. Written to on-demand (manual "Generate"/"Regenerate" button, not auto-called on page load) via `generateCoachFeedbackAction` — each generation is a new row so the UI can show "last generated at." |
+| `health_insights` | Progress tab's "Insights" card — same on-demand/new-row-per-generation pattern as `ai_feedback`, via `generateHealthInsightsAction`. Added in `schema.sql` in v0.7; if you see `PGRST205: could not find the table` at runtime, the live database's schema cache hasn't caught up — see bug class #7 above, this needs a manual step in the Supabase SQL Editor, not a code fix. |
 
 **Dedup patterns worth knowing:**
 - `workout_logs`: unique `(user_id, health_workout_id)` — plain constraint, not

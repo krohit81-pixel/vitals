@@ -86,15 +86,6 @@ create table if not exists public.daily_totals (
   unique (user_id, date)
 );
 
-create table if not exists public.weight_logs (
-  id uuid primary key default uuid_generate_v4(),
-  user_id uuid references public.users(id) on delete cascade not null,
-  weight_kg numeric not null,
-  body_fat_pct numeric,
-  photo_url text,
-  logged_at timestamptz default now()
-);
-
 create table if not exists public.ai_feedback (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references public.users(id) on delete cascade not null,

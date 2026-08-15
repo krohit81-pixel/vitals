@@ -5,37 +5,69 @@ tracking, weight tracking, Apple Health data import, and an analytics-driven Pro
 dashboard with AI-generated insights. Built iteratively across several milestones —
 this doc is the entry point for picking development back up in a new session.
 
-**Read this first, then `docs/ARCHITECTURE.md`** for the patterns and conventions this
-codebase leans on — several of them exist specifically because getting them wrong
+**Read this first, then `documents/ARCHITECTURE.md`** for the patterns and conventions
+this codebase leans on — several of them exist specifically because getting them wrong
 caused real bugs earlier in development, and they're easy to reintroduce if you don't
-know the history.
+know the history. Then check `documents/CHANGELOG.md`'s most recent entries (newest
+first) for exactly what shipped last, and `documents/BACKLOG.md` for what's
+deliberately not built yet.
+
+**Current version:** see `version` in `package.json` (as of this writing, `0.8.3`).
 
 ---
 
 ## Current state (high level)
 
 - **Auth & shell** — Supabase Auth, bottom nav (mobile) / sidebar (desktop), 5 tabs:
-  Dashboard, Meals, Progress, AI Coach, Profile.
+  Dashboard, Meals, Progress, AI Coach, Profile. Every page shares one `AppHeader`
+  (collapsing hero banner using `public/header_new.PNG` → compact frosted bar on
+  scroll) and one `AppFooter` (version + credit line).
 - **Meal logging** — photo (Gemini Vision), manual text, voice (Web Speech API), with
   a confidence-based clarification-chip flow when the AI isn't sure about something.
-  User-editable quick-add shortcuts (Profile → Meal Shortcuts).
+  User-editable quick-add shortcuts (Profile → Meal Shortcuts). Entries are editable
+  after saving, and can be backdated to a past date/time (not locked to "now").
 - **Dashboard** — energy balance ring (`Remaining = Target + Burned − Consumed`),
   macro cards, unified daily timeline (meals + workouts), date navigation (day/week/
-  month), streak tracking.
+  month), streak tracking. Every navigating click (tabs, day/week/month, range
+  selectors) shows a loading ring rather than a blank flash.
 - **Workouts** — manual CRUD, 12 types, folded into the same energy-balance math and
   timeline as meals.
-- **Weight** — quick-add + history/edit, folded into Progress analytics.
+- **Weight** — quick-add (backdatable) + history/edit, folded into Progress analytics.
+- **Personal details** (`/profile/personal-details`) — height, weight, age, gender,
+  activity level, diet type, allergies, units. Feeds both the AI Coach and Progress
+  Insights prompts as optional context (only ever references fields actually filled
+  in), and drives the BMI shown on Progress.
 - **Apple Health data** — **not a live sync** (see below) — manual JSON import from
   the HealthSave export app, with cross-source duplicate detection against
   manually-logged workouts.
-- **Progress tab** — Health Score ring, AI-generated insights, Weight/Heart/Activity/
-  Nutrition overview cards, 7D/30D/90D/1Y range selector, per-metric detail screens,
-  achievements.
+- **Progress tab** — redesigned in v0.8.3 around one rule: never show a number
+  without explaining what it's made of. Health Score shows a hit/total breakdown per
+  metric (with the direction each one is chasing — see "Consistency direction" below);
+  Resting Heart Rate shows avg/min/max + a sparkline + one trend line that can't
+  contradict itself; Weight is merged with BMI in one card with a goal-progress delta;
+  Activity has a real 7-day steps chart; a Nutrition Consistency card covers
+  calories/protein/carbs/fat/fibre/water; the range selector always shows the exact
+  date span, not just "7 days." Achievements are a horizontal scroll strip.
 - **AI Coach** — hero summary + recommendations (LLM-generated), consistency-based
   insight cards with sparklines, weekly rhythm score.
 - **Design language** — warm cream / graphite-black theme, emerald primary with a
   diversified per-metric accent palette, glass-card surfaces, vivid gradient rings
-  with a slider-thumb marker (Dashboard + Progress hero rings, Milestone-recent).
+  with a slider-thumb marker (Dashboard + Progress hero rings).
+
+### Consistency direction (min vs max) — read before touching any target/goal logic
+
+`calcConsistency` / `calcConsistencyDetail` (`src/lib/nutrition/consistency.ts`) take a
+`direction: "min" | "max"`:
+- **`"min"`** (protein, fibre, water, steps) — these are floors. Reaching *at least*
+  the target is a hit; going over is still fine, there's no upper bound.
+- **`"max"`** (calories, carbs, fat) — these are budgets. Staying *at or under* the
+  target (with ~20% grace either direction) is a hit; going over is the thing being
+  tracked.
+
+Before v0.8.3 every metric used `"min"` semantics, which meant a 4,000 kcal day against
+a 2,000 kcal target silently counted as "on track." If you add a new target-based
+metric anywhere in the app, decide which direction it actually is before wiring up its
+consistency check — don't assume `"min"`.
 
 ### Important: Apple Health integration reality
 
@@ -118,25 +150,32 @@ src/
       workouts/                        — manual workout CRUD
       weight/                          — weight history/edit (the *editable* side —
                                           Progress's weight screens are read-only)
-      progress/                        — Health Score, insights, overview cards,
-                                          per-metric detail screens, range selector
+      progress/                        — Health Score + breakdown, insights, Weight/
+                                          Heart/Activity/Nutrition cards, per-metric
+                                          detail screens, range selector
       coach/                           — AI Coach hero + insights + rhythm score
-      profile/                         — settings, goals, meal shortcuts, health import
+      profile/                         — settings, goals, meal shortcuts, health import,
+                                          personal-details/ (height/weight/age/etc.)
     api/                               — Route Handlers (currently none live — the
                                           Apple Health sync route was removed)
     layout.tsx, globals.css            — root layout, fonts, design tokens
   components/
     ui/                                — Button, Card, Input
-    navigation/                        — Sidebar, BottomNav, CaptureSheet, NavShell
-    dashboard/, progress/, coach/,     — feature-scoped presentational components
-      analytics/, capture/, workouts/,
-      meals/, profile/, shared/
+    navigation/                        — Sidebar, BottomNav, CaptureSheet, NavShell,
+                                          AppHeader (collapsing hero), AppFooter
+    dashboard/, progress/, coach/,     — feature-scoped presentational components —
+      analytics/, capture/, workouts/,   progress/ holds the redesigned Progress tab's
+      meals/, profile/, shared/          cards: score-breakdown, weight-card,
+                                          heart-rate-card, activity-card,
+                                          nutrition-consistency-card, achievement-strip
   lib/
-    ai/                                — provider abstraction (see docs/ARCHITECTURE.md)
+    ai/                                — provider abstraction (see documents/ARCHITECTURE.md)
     nutrition/                         — the bulk of the domain logic: date math,
-                                          consistency scoring, streak logic, range
-                                          data-fetching helpers, health-metric import
-                                          parsing, workout/meal-type definitions
+                                          consistency scoring (direction-aware — see
+                                          above), streak logic, range data-fetching
+                                          helpers (incl. get-weight-series.ts),
+                                          health-metric import parsing, workout/meal-
+                                          type definitions
     supabase/                          — client.ts (browser), server.ts (RSC/actions),
                                           middleware.ts (session refresh + route guard)
     utils.ts
@@ -150,9 +189,11 @@ supabase/
 
 ## Docs
 
-- **`docs/ARCHITECTURE.md`** — patterns, conventions, and the specific bug classes this
-  codebase has hit before (Server/Client boundary rules, timezone correctness, schema
-  ordering) — read before making changes in those areas.
-- **`CHANGELOG.md`** — what shipped, in order, milestone by milestone.
-- **`BACKLOG.md`** — deferred items and known limitations, with root causes noted where
-  already diagnosed.
+- **`documents/ARCHITECTURE.md`** — patterns, conventions, and the specific bug classes
+  this codebase has hit before (Server/Client boundary rules, timezone correctness,
+  schema ordering, consistency direction) — read before making changes in those areas.
+- **`documents/CHANGELOG.md`** — what shipped, in order, newest first.
+- **`documents/BACKLOG.md`** — deferred items and known limitations, with root causes
+  noted where already diagnosed.
+- **`documents/prototypes/`** — reviewed HTML mockups kept for reference (e.g. the
+  Progress tab redesign) — not live code, just what was approved before building.
