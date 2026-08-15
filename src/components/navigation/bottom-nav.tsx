@@ -55,7 +55,7 @@ export function BottomNav({ onCapture }: { onCapture: () => void }) {
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.06] bg-white/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg dark:border-white/[0.06] dark:bg-graphite/80 md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.06] bg-white/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg dark:border-white/[0.06] dark:bg-graphite/80 md:hidden print:hidden">
       <div className="relative mx-auto flex max-w-md items-center px-2">
         {left.map(renderItem)}
 

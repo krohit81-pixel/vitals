@@ -12,7 +12,7 @@ know the history. Then check `documents/CHANGELOG.md`'s most recent entries (new
 first) for exactly what shipped last, and `documents/BACKLOG.md` for what's
 deliberately not built yet.
 
-**Current version:** see `version` in `package.json` (as of this writing, `0.8.3`).
+**Current version:** see `version` in `package.json` (as of this writing, `0.9.0`).
 
 ---
 
@@ -21,7 +21,15 @@ deliberately not built yet.
 - **Auth & shell** — Supabase Auth, bottom nav (mobile) / sidebar (desktop), 5 tabs:
   Dashboard, Meals, Progress, AI Coach, Profile. Every page shares one `AppHeader`
   (collapsing hero banner using `public/header_new.PNG` → compact frosted bar on
-  scroll) and one `AppFooter` (version + credit line).
+  scroll) and one `AppFooter` (version + credit line). Since v0.9.0 the header also
+  carries a version label + hamburger menu (`HeaderMenu`) — Weekly Reports and Display
+  settings, reachable from every tab but deliberately not part of the 5-tab bottom nav.
+- **Weekly Reports** (`/reports`, hamburger menu → Weekly Reports) — auto-generated,
+  fully deterministic (no AI call) per-week summary: focus areas (reusing Progress's
+  own `calcWeekConsistencyDetails`/`ScoreBreakdown`), accomplishments (reusing
+  `computeAchievements`), and a suggested focus for next week based on the weakest
+  tracked metric. "Generate" snapshots it to `weekly_reports`; "Save PDF" is the
+  browser's native `window.print()` — no PDF library dependency.
 - **Meal logging** — photo (Gemini Vision), manual text, voice (Web Speech API), with
   a confidence-based clarification-chip flow when the AI isn't sure about something.
   User-editable quick-add shortcuts (Profile → Meal Shortcuts). Entries are editable
@@ -156,13 +164,17 @@ src/
       coach/                           — AI Coach hero + insights + rhythm score
       profile/                         — settings, goals, meal shortcuts, health import,
                                           personal-details/ (height/weight/age/etc.)
+      reports/                         — Weekly Reports (v0.9.0), reachable only from
+                                          the header's hamburger menu — deterministic,
+                                          no AI call; window.print() for PDF
     api/                               — Route Handlers (currently none live — the
                                           Apple Health sync route was removed)
     layout.tsx, globals.css            — root layout, fonts, design tokens
   components/
     ui/                                — Button, Card, Input
     navigation/                        — Sidebar, BottomNav, CaptureSheet, NavShell,
-                                          AppHeader (collapsing hero), AppFooter
+                                          AppHeader (collapsing hero), AppFooter,
+                                          HeaderMenu (v0.9.0 hamburger dropdown)
     dashboard/, progress/, coach/,     — feature-scoped presentational components —
       analytics/, capture/, workouts/,   progress/ holds the redesigned Progress tab's
       meals/, profile/, shared/          cards: score-breakdown, weight-card,

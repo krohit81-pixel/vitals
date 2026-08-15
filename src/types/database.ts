@@ -184,6 +184,25 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["health_insights"]["Row"]>;
       Relationships: never[];
       };
+      weekly_reports: {
+        Row: {
+          id: string;
+          user_id: string;
+          week_start: string;
+          week_end: string;
+          focus_areas: Array<{ label: string; hits: number; total: number; direction: "min" | "max"; color: string }>;
+          accomplishments: string[];
+          upcoming_focus: string | null;
+          generated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["weekly_reports"]["Row"]> & {
+          user_id: string;
+          week_start: string;
+          week_end: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["weekly_reports"]["Row"]>;
+      Relationships: never[];
+      };
       settings: {
         Row: {
           user_id: string;

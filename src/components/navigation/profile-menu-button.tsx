@@ -1,13 +1,16 @@
 "use client";
 
 import Link, { useLinkStatus } from "next/link";
-import { Menu } from "lucide-react";
+import { User } from "lucide-react";
 import { LoadingRing } from "@/components/shared/loading-ring";
 import { cn } from "@/lib/utils";
 
+// Was the `Menu` (hamburger) glyph — swapped to `User` now that a real
+// hamburger dropdown (HeaderMenu) sits right next to this button, so the two
+// no longer look like the same control doing different things.
 function MenuIcon() {
   const { pending } = useLinkStatus();
-  return pending ? <LoadingRing size={16} className="text-current" /> : <Menu size={18} />;
+  return pending ? <LoadingRing size={16} className="text-current" /> : <User size={18} />;
 }
 
 export function ProfileMenuButton({ variant = "default" }: { variant?: "default" | "banner" }) {

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/profile/theme-toggle";
 import { AppHeader } from "@/components/navigation/app-header";
 import { signOutAction } from "./actions";
 
@@ -20,13 +19,6 @@ export default async function ProfilePage() {
         <h1 className="font-display text-2xl font-semibold text-ink dark:text-cream-100">Profile</h1>
         <p className="mt-1 text-sm text-black/50 dark:text-white/50">{user?.email}</p>
       </header>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-        </CardHeader>
-        <ThemeToggle />
-      </Card>
 
       <Card>
         <CardHeader>

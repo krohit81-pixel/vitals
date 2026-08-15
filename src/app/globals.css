@@ -45,3 +45,18 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Weekly Reports "Save PDF" (window.print()) — a global rule so any page
+   that happens to get printed comes out legible on white paper regardless of
+   dark mode, not just Reports. Nav chrome hides itself per-component via
+   Tailwind's built-in `print:hidden`. */
+@media print {
+  .glass-card,
+  .glass-card-solid {
+    background: white !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: 1px solid #e5e5e5 !important;
+    color: #18191c !important;
+  }
+}

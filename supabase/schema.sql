@@ -214,6 +214,23 @@ create table if not exists public.health_insights (
   created_at timestamptz default now()
 );
 
+-- v0.9.0: Weekly Reports (hamburger menu → Weekly Reports), fully
+-- auto-generated from logged data (deterministic, no AI call). Unlike
+-- ai_feedback/health_insights (new row per generation), a week has a stable
+-- identity — "Generate" upserts onto (user_id, week_start) so re-generating
+-- the same week refreshes it in place instead of piling up duplicates.
+create table if not exists public.weekly_reports (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  week_start date not null,
+  week_end date not null,
+  focus_areas jsonb not null default '[]',
+  accomplishments jsonb not null default '[]',
+  upcoming_focus text,
+  generated_at timestamptz default now(),
+  unique (user_id, week_start)
+);
+
 -- Row Level Security: every user can only touch their own rows
 alter table public.users enable row level security;
 alter table public.goals enable row level security;
@@ -227,6 +244,7 @@ alter table public.workout_logs enable row level security;
 alter table public.health_metrics enable row level security;
 alter table public.meal_shortcuts enable row level security;
 alter table public.health_insights enable row level security;
+alter table public.weekly_reports enable row level security;
 
 do $$
 declare
@@ -235,7 +253,7 @@ begin
   for t in select unnest(array[
     'users','goals','meal_images','meal_logs',
     'daily_totals','weight_logs','ai_feedback','settings','workout_logs','health_metrics','meal_shortcuts',
-    'health_insights'
+    'health_insights','weekly_reports'
   ])
   loop
     execute format($f$

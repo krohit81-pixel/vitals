@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { ProfileMenuButton } from "./profile-menu-button";
+import { HeaderMenu } from "./header-menu";
+import { APP_VERSION } from "@/lib/version";
 
 // How much scroll (px) it takes for the compact bar to fully appear.
 const COLLAPSE_DISTANCE = 90;
@@ -64,7 +66,7 @@ export function AppHeader() {
     // child so it stays the first child of the page's `space-y-*` container
     // and doesn't pick up an unwanted top margin (and so the fixed compact
     // bar, nested here rather than as a sibling, isn't affected by one either).
-    <div>
+    <div className="print:hidden">
       {/* Compact bar — invisible at rest, fades/slides in once scrolled.
           `fixed` + rendered outside the hero's transformed subtree so it
           anchors to the real viewport, not the hero's own transform. */}
@@ -76,9 +78,15 @@ export function AppHeader() {
         <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full">
           <Image src="/logo.png" alt="" width={28} height={28} className="rounded-full" />
         </div>
-        <span className="font-display text-[15px] font-semibold text-ink dark:text-cream-100">Vitals</span>
-        <div className="ml-auto md:hidden">
-          <ProfileMenuButton />
+        <span className="flex items-baseline gap-1.5">
+          <span className="font-display text-[15px] font-semibold text-ink dark:text-cream-100">Vitals</span>
+          <span className="text-[10px] font-medium text-black/40 dark:text-white/40">v{APP_VERSION}</span>
+        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <HeaderMenu />
+          <div className="md:hidden">
+            <ProfileMenuButton />
+          </div>
         </div>
       </div>
 
@@ -103,10 +111,13 @@ export function AppHeader() {
         </div>
 
         <div
-          className="absolute right-4 sm:right-5 md:hidden"
+          className="absolute right-4 flex items-center gap-2 sm:right-5"
           style={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
         >
-          <ProfileMenuButton variant="banner" />
+          <HeaderMenu variant="banner" />
+          <div className="md:hidden">
+            <ProfileMenuButton variant="banner" />
+          </div>
         </div>
       </div>
     </div>

@@ -23,16 +23,15 @@ anything) still needs a manual step before new work.
 
 ## Current version
 
-Check `version` in `package.json` — as of this handoff, **`0.8.3`**.
+Check `version` in `package.json` — as of this handoff, **`0.9.0`**.
 
-## Requested next: v1.5 (not started — two decisions needed before building)
+## Requested next: v1.5 — shipped in v0.9.0
 
-Rohit asked for this round already, but **no code has been written for it yet** — the
-request came in, then the conversation moved on before either open question below got
-answered. Don't guess on either one; ask directly, since a wrong guess on the report
-content in particular means redoing real work.
-
-His exact wording:
+The hamburger menu / Weekly Reports / display-settings request below was answered
+directly by Rohit (menu in the header compact bar; report content auto-generated from
+logged data, deterministic, no AI call; PDF via `window.print()`; theme toggle moved
+into the new menu, not duplicated) and built — see `CHANGELOG.md`'s v0.9.0 entry for
+what actually shipped. Original request preserved here for reference:
 
 > new section (hamburg menu) on the top.. (next to orbit vxxx) should have:
 > - prepare a new tab, this will create weekly reports.. which i can generate pdf
@@ -44,61 +43,22 @@ His exact wording:
 > whenever any process is happening, put the load/in progress ring, so that i know it
 > is working..
 
-**1. Hamburger menu — placement is unconfirmed.** "next to orbit vxxx" is almost
-certainly a mishearing/typo of "Vitals vX.X.X" (there is no "Orbit" anywhere in this
-codebase). But the header's compact bar currently shows a small logo + "Vitals" with
-**no version number** — the version only appears in the footer (`Vitals v:X.X.X —
-Created by Rohit Kohli`, see `AppFooter`). So "next to Vitals vX.X.X" could mean either:
-   - add a version label to the header compact bar and put the hamburger there
-     (visible on every tab, most likely intent given "on the top"), or
-   - put the hamburger down by the existing version line in the footer instead.
+**Outstanding manual step**: `weekly_reports` (new table, v0.9.0) needs the same
+Supabase SQL Editor step called out below for `health_insights` — see that section,
+same root cause, now two tables waiting on it if neither has been run yet.
 
-   Ask which one before touching `app-header.tsx` / `app-footer.tsx`.
+## Outstanding manual step (unverified — check before relying on Progress Insights or Weekly Reports)
 
-**2. Weekly Report content is unconfirmed — and worth flagging as a mismatch.** Vitals
-is a nutrition/fitness app, but "key focus areas, key accomplishments, key deliverables
-for upcoming week" is work/project-status-report language, not fitness-report language.
-Three readings, all plausible, not yet picked:
-   - **Auto-generated from logged data** — focus areas = which goals were tracked that
-     week (calories/protein/steps/etc., same data `calcWeekConsistencyDetails` already
-     computes for Progress), accomplishments = achievements/streaks/consistency hit,
-     upcoming week = a suggested focus based on this week's weakest metric. Zero typing,
-     just Generate → PDF.
-   - **Free-form journal** — a form where the user types their own three sections in
-     plain text each week; the app only formats it into a PDF. No data pulled in.
-   - **Hybrid** — auto-filled draft from logged data (same as option 1), but every
-     section is an editable text area before export.
-
-   Also confirm the PDF approach itself — no PDF library is installed yet
-   (`package.json` has none). Options range from a print-optimized view + the browser's
-   native "Save as PDF" (`window.print()`, zero new dependencies) to a real library
-   (`@react-pdf/renderer`, `jspdf`, etc.) if pixel-perfect layout matters more than
-   simplicity.
-
-**Already exists — don't rebuild:** dark/light/system theme switching is fully built
-(`src/providers/theme-provider.tsx`, persisted, applies the `dark` class app-wide) and
-already has a working toggle UI (`src/components/profile/theme-toggle.tsx`) exposed on
-the Profile tab today. "Add display settings" most likely just means *surfacing the
-existing toggle in the new hamburger menu too* (or moving it there), not building
-theme support from scratch — confirm which, but check this before writing any new
-theme logic.
-
-**Loading ring on every process** — this is a genuine extension of the existing
-convention (see `LoadingRing` in `ARCHITECTURE.md`/`CHANGELOG.md`'s v0.7.1 entry), not
-a new pattern. Apply it to whatever's new here specifically: hamburger menu open/close
-if it's async, PDF generation/download, and the theme toggle if moved into the menu.
-
-## Outstanding manual step (unverified — check before relying on Progress Insights)
-
-`health_insights` was added to `supabase/schema.sql` in v0.7. Development sandboxes
-in this project have never had a Postgres connection string or Supabase management
-token — only the anon/service-role API keys — so **new tables in `schema.sql` don't
-reach the live database automatically**; someone has to run the SQL in the Supabase
-SQL Editor by hand. This was flagged once already (a `PGRST205: could not find table
-'public.health_insights'` error while testing v0.8.1) and the fix SQL was handed over
-at the time. Whether it was actually run since then isn't verifiable from here (no
-network access to Supabase from this environment) — if Progress → "Generate insights"
-still errors with `PGRST205`, re-run the whole `supabase/schema.sql` file (it's fully
+`health_insights` (v0.7) and now `weekly_reports` (v0.9.0) were added to
+`supabase/schema.sql`. Development sandboxes in this project have never had a Postgres
+connection string or Supabase management token — only the anon/service-role API keys —
+so **new tables in `schema.sql` don't reach the live database automatically**; someone
+has to run the SQL in the Supabase SQL Editor by hand. This was flagged once already for
+`health_insights` (a `PGRST205: could not find table 'public.health_insights'` error
+while testing v0.8.1) and the fix SQL was handed over at the time. Whether it was
+actually run since then isn't verifiable from here (no network access to Supabase from
+this environment) — if Progress → "Generate insights" or Weekly Reports → "Generate
+report" errors with `PGRST205`, re-run the whole `supabase/schema.sql` file (it's fully
 idempotent, safe to re-run end to end) in the Supabase SQL Editor.
 
 ## Working conventions worth knowing upfront

@@ -22,7 +22,7 @@ export function Sidebar({ onCapture }: { onCapture: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-black/[0.06] bg-white/60 px-4 py-6 backdrop-blur-lg dark:border-white/[0.06] dark:bg-graphite/60 md:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-black/[0.06] bg-white/60 px-4 py-6 backdrop-blur-lg dark:border-white/[0.06] dark:bg-graphite/60 md:flex print:hidden">
       <div className="mb-8 flex items-center gap-2 px-2">
         <Logo size="sm" />
         <span className="font-display text-lg font-semibold">Vitals</span>

@@ -2,6 +2,37 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.9.0
+
+- **New hamburger menu** in the header (compact bar + hero banner, both mobile
+  and desktop — the only piece of chrome that isn't limited to mobile like
+  `ProfileMenuButton` is). Sits next to a new "v{version}" label beside the
+  "Vitals" wordmark. `ProfileMenuButton`'s icon changed from `Menu` to `User`
+  now that a real hamburger sits next to it — two hamburger-look icons doing
+  different things would've been confusing.
+- **New "Weekly Reports" tab** (`/reports`, reachable only from the new
+  hamburger menu — deliberately not added to the bottom nav / sidebar's 5 main
+  tabs, same pattern already used for Profile-on-mobile). Auto-generated from
+  logged data, **fully deterministic — no AI call**: focus areas reuse the
+  exact same `calcWeekConsistencyDetails()` + `ScoreBreakdown` component
+  Progress already uses (so the two screens can never disagree about a given
+  week), accomplishments reuse `computeAchievements()`, and "focus for next
+  week" is a template sentence built from whichever tracked metric had the
+  lowest hit rate that week. Week navigation is URL-param-driven (`?week=`),
+  same convention as Dashboard/Progress. "Generate" persists a snapshot to the
+  new `weekly_reports` table (upserts per `(user_id, week_start)` — a week has
+  a stable identity, unlike `ai_feedback`/`health_insights`'s new-row-per-
+  generation pattern) with a loading ring while it runs; "Save PDF" is the
+  browser's native `window.print()` — zero new dependencies. Print styling
+  hides all nav chrome and forces a white/legible card regardless of dark mode.
+- **Display settings relocated**: the existing `ThemeToggle` (light/dark/
+  system) moved from Profile's "Appearance" card into the new hamburger menu —
+  not duplicated in both places.
+- **Required manual step**: `weekly_reports` was added to `supabase/schema.sql`
+  — same as `health_insights` before it, this needs to be pasted into the
+  Supabase SQL Editor by hand (or the whole file re-run) before "Generate" will
+  work against the live database; otherwise it'll throw `PGRST205`.
+
 ## v0.8.3
 
 - **Fixed a real scoring bug**: consistency checks (Health Score, the nutrition
