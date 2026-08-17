@@ -3,26 +3,29 @@
 import { useEffect, useState } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, FileText, X } from "lucide-react";
+import { Menu, FileText, User, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { LoadingRing } from "@/components/shared/loading-ring";
 import { ThemeToggle } from "@/components/profile/theme-toggle";
 import { cn } from "@/lib/utils";
 
 /** Descendant of <Link> — same useLinkStatus → LoadingRing swap used by every
- * other nav link in the app (bottom-nav, sidebar, profile-menu-button). */
-function ReportsLinkIcon() {
+ * other nav link in the app (bottom-nav, sidebar). */
+function LinkIcon({ icon: Icon }: { icon: LucideIcon }) {
   const { pending } = useLinkStatus();
-  return pending ? <LoadingRing size={16} className="text-current" /> : <FileText size={16} />;
+  return pending ? <LoadingRing size={16} className="text-current" /> : <Icon size={16} />;
 }
 
 /**
- * The app-wide hamburger menu — lives in both places `ProfileMenuButton`
- * renders (compact bar + hero banner), but unlike that button it's visible on
- * desktop too, since neither the sidebar nor the compact bar otherwise has a
- * home for Weekly Reports or Display settings. Hand-rolled dropdown (no
- * Radix/Headless UI in this codebase) using the same AnimatePresence +
- * backdrop pattern as `CaptureSheet`, just anchored top-right instead of as a
- * bottom sheet.
+ * The single, app-wide "everything else" menu — one hamburger button (mobile
+ * + desktop, both places `AppHeader` renders it: compact bar + hero banner).
+ * Originally shipped alongside a separate `ProfileMenuButton` for Profile,
+ * but two adjacent icon buttons doing different things read as confusing/
+ * redundant in practice — Profile (mobile only; desktop already has it in the
+ * sidebar), Weekly Reports, and Display settings now all live in this one
+ * dropdown instead. Hand-rolled (no Radix/Headless UI in this codebase),
+ * same AnimatePresence + backdrop pattern as `CaptureSheet`, just anchored
+ * top-right instead of as a bottom sheet.
  */
 export function HeaderMenu({ variant = "default" }: { variant?: "default" | "banner" }) {
   const [open, setOpen] = useState(false);
@@ -83,12 +86,23 @@ export function HeaderMenu({ variant = "default" }: { variant?: "default" | "ban
                 </button>
               </div>
 
+              {/* Desktop already has Profile in the sidebar — this row is
+                  mobile's only way in now that ProfileMenuButton is gone. */}
+              <Link
+                href="/profile"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-black/[0.04] dark:text-cream-100 dark:hover:bg-white/[0.06] md:hidden"
+              >
+                <LinkIcon icon={User} />
+                Profile
+              </Link>
+
               <Link
                 href="/reports"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-black/[0.04] dark:text-cream-100 dark:hover:bg-white/[0.06]"
               >
-                <ReportsLinkIcon />
+                <LinkIcon icon={FileText} />
                 Weekly Reports
               </Link>
 

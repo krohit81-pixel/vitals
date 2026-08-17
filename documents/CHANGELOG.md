@@ -2,6 +2,17 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.9.1
+
+- **Two header icons consolidated into one.** v0.9.0 shipped `HeaderMenu`
+  (hamburger) *next to* the existing `ProfileMenuButton` (a `User`-icon button
+  that just linked straight to `/profile`) — two adjacent icon buttons doing
+  different things read as confusing/redundant in practice. `ProfileMenuButton`
+  is removed; Profile now lives as a row inside `HeaderMenu`'s dropdown
+  (mobile only — desktop already has Profile in the sidebar, so that row
+  hides itself there), alongside Weekly Reports and Display settings. One
+  hamburger button, everything else behind it.
+
 ## v0.9.0
 
 - **New hamburger menu** in the header (compact bar + hero banner, both mobile

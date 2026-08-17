@@ -12,7 +12,7 @@ know the history. Then check `documents/CHANGELOG.md`'s most recent entries (new
 first) for exactly what shipped last, and `documents/BACKLOG.md` for what's
 deliberately not built yet.
 
-**Current version:** see `version` in `package.json` (as of this writing, `0.9.0`).
+**Current version:** see `version` in `package.json` (as of this writing, `0.9.1`).
 
 ---
 
