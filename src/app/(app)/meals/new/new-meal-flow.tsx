@@ -53,11 +53,12 @@ export function NewMealFlow({ shortcuts }: { shortcuts: string[] }) {
     setMaxLoggedAt(now);
   }, []);
 
-  const handlePhotoAnalyze = async (imageBase64: string, mimeType: string) => {
+  const handlePhotoAnalyze = async (imageBase64: string, mimeType: string, note?: string) => {
     setStatus("analyzing");
     try {
-      const result = await analyzeMealPhotoAction(imageBase64, mimeType);
+      const result = await analyzeMealPhotoAction(imageBase64, mimeType, note);
       setPendingImage({ base64: imageBase64, mimeType });
+      setRawInput(note);
       setAnalysis(result);
       setStatus("idle");
     } catch (err) {

@@ -20,9 +20,9 @@ export const MEAL_ANALYSIS_JSON_SHAPE = `{
   "explanation": string // one short sentence, plain language, e.g. "Estimated as 2 eggs, whole wheat toast, butter, and black coffee."
 }`;
 
-export function buildImageAnalysisPrompt() {
+export function buildImageAnalysisPrompt(note?: string) {
   return `You are a nutrition estimation assistant. Look at this meal photo and identify every distinct food item, estimating its serving size and nutrition.
-
+${note ? `\nThe user added this note about what they actually ate — treat it as authoritative and let it override what's visually ambiguous or incomplete in the photo (e.g. "only ate half the packet" means half the visible portion; "with 1 liter water" tells you how a powder/concentrate was diluted): "${note}"\n` : ""}
 Rules:
 - Estimate calories, protein, carbs, fat, fibre, sugar, and sodium per item, using realistic portion sizes based on visual cues (plate size, utensils, etc).
 - Give each item its own confidence score (0-1) based on how certain you are of its identity and portion.

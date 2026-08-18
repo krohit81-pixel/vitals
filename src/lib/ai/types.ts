@@ -67,8 +67,11 @@ export interface HealthInsights {
  * of the app never depends on a specific vendor SDK.
  */
 export interface AIProvider {
-  /** Analyze a meal photo and return structured nutrition estimates. */
-  analyzeMealImage(imageBase64: string, mimeType: string): Promise<MealAnalysis>;
+  /** Analyze a meal photo and return structured nutrition estimates. `note` is
+   * an optional user-supplied caption (e.g. "only ate half the packet") —
+   * treated as authoritative context that can override what's visually
+   * ambiguous or incomplete in the photo alone. */
+  analyzeMealImage(imageBase64: string, mimeType: string, note?: string): Promise<MealAnalysis>;
 
   /** Parse free-text meal descriptions ("2 eggs and toast") into structured nutrition. */
   analyzeMealText(description: string): Promise<MealAnalysis>;

@@ -27,12 +27,12 @@ async function chat(messages: unknown[]): Promise<string> {
 }
 
 export class OpenAIProvider implements AIProvider {
-  async analyzeMealImage(imageBase64: string, mimeType: string): Promise<MealAnalysis> {
+  async analyzeMealImage(imageBase64: string, mimeType: string, note?: string): Promise<MealAnalysis> {
     const text = await chat([
       {
         role: "user",
         content: [
-          { type: "text", text: buildImageAnalysisPrompt() },
+          { type: "text", text: buildImageAnalysisPrompt(note) },
           { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
         ],
       },

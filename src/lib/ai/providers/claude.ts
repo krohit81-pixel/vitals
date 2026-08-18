@@ -28,9 +28,9 @@ async function messages(content: unknown): Promise<string> {
 }
 
 export class ClaudeProvider implements AIProvider {
-  async analyzeMealImage(imageBase64: string, mimeType: string): Promise<MealAnalysis> {
+  async analyzeMealImage(imageBase64: string, mimeType: string, note?: string): Promise<MealAnalysis> {
     const text = await messages([
-      { type: "text", text: buildImageAnalysisPrompt() },
+      { type: "text", text: buildImageAnalysisPrompt(note) },
       { type: "image", source: { type: "base64", media_type: mimeType, data: imageBase64 } },
     ]);
     return toMealAnalysis(extractJson(text) as Parameters<typeof toMealAnalysis>[0]);

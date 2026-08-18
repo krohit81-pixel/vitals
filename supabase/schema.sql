@@ -58,7 +58,7 @@ create table if not exists public.meal_logs (
   meal_image_id uuid references public.meal_images(id) on delete set null,
   meal_type text check (meal_type in ('breakfast','lunch','dinner','snack')) not null,
   source text check (source in ('photo','manual','voice','barcode')) not null default 'manual',
-  raw_input text, -- original text/voice transcript, if applicable
+  raw_input text, -- original text/voice transcript, or a photo's user-added note (v0.9.2), if applicable
   detected_items jsonb default '[]', -- [{name, quantity, unit, confidence}]
   calories numeric not null default 0,
   protein_g numeric not null default 0,

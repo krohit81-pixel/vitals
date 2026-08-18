@@ -2,6 +2,19 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.9.2
+
+- **Optional note when logging a meal from a photo.** "Take Photo" / "Upload
+  Photo" now show a small optional textarea under the preview (e.g. "only ate
+  half the packet", "electrolyte packet with 1 liter water") before you tap
+  "Analyze meal" — the note is sent to the AI alongside the image and treated
+  as authoritative, letting it override portions/dilution the photo alone
+  can't show. Reuses the existing `rawInput`/`meal_logs.raw_input` field
+  (previously only populated by Manual/Voice entry) end to end — no schema
+  change, and it shows up the same place those already do: "What you
+  entered" on the meal detail page. Manual Entry and Voice Entry are
+  unaffected (already free text).
+
 ## v0.9.1
 
 - **Two header icons consolidated into one.** v0.9.0 shipped `HeaderMenu`

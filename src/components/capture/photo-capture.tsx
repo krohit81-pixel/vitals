@@ -12,12 +12,13 @@ export function PhotoCapture({
 }: {
   /** true for "Take Photo" (opens camera directly on mobile), false for "Upload Photo" (gallery/file picker) */
   useCameraCapture: boolean;
-  onAnalyze: (imageBase64: string, mimeType: string) => void;
+  onAnalyze: (imageBase64: string, mimeType: string, note?: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<{ url: string; base64: string; mimeType: string } | null>(
     null
   );
+  const [note, setNote] = useState("");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,18 +76,37 @@ export function PhotoCapture({
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 py-4">
+    <div className="flex flex-col items-center gap-3 py-4">
       <div className="relative h-64 w-full max-w-xs overflow-hidden rounded-2xl">
         <Image src={preview.url} alt="Meal preview" fill className="object-cover" />
       </div>
+
+      {/* Optional — lets the AI account for things a photo alone can't show:
+          a partial portion, how a powder/concentrate was diluted, etc. */}
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder={'Add a note (optional) — e.g. "only ate half the packet"'}
+        rows={2}
+        className="w-full max-w-xs resize-none rounded-xl border border-black/[0.08] bg-white/70 p-3 text-sm outline-none placeholder:text-black/35 focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04] dark:placeholder:text-white/35"
+      />
+
       <div className="flex w-full max-w-xs gap-2">
-        <Button variant="outline" size="md" onClick={() => setPreview(null)} className="flex-1">
+        <Button
+          variant="outline"
+          size="md"
+          onClick={() => {
+            setPreview(null);
+            setNote("");
+          }}
+          className="flex-1"
+        >
           <RotateCcw size={16} /> Retake
         </Button>
         <Button
           size="md"
           className="flex-1"
-          onClick={() => onAnalyze(preview.base64, preview.mimeType)}
+          onClick={() => onAnalyze(preview.base64, preview.mimeType, note.trim() || undefined)}
         >
           Analyze meal
         </Button>

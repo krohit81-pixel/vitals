@@ -19,10 +19,11 @@ async function requireUser() {
 
 export async function analyzeMealPhotoAction(
   imageBase64: string,
-  mimeType: string
+  mimeType: string,
+  note?: string
 ): Promise<MealAnalysis> {
   await requireUser(); // ensures only signed-in users can spend API credits
-  return getAIProvider().analyzeMealImage(imageBase64, mimeType);
+  return getAIProvider().analyzeMealImage(imageBase64, mimeType, note);
 }
 
 export async function analyzeMealTextAction(description: string): Promise<MealAnalysis> {

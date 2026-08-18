@@ -12,11 +12,11 @@ function getClient() {
 }
 
 export class GeminiProvider implements AIProvider {
-  async analyzeMealImage(imageBase64: string, mimeType: string): Promise<MealAnalysis> {
+  async analyzeMealImage(imageBase64: string, mimeType: string, note?: string): Promise<MealAnalysis> {
     const model = getClient().getGenerativeModel({ model: MODEL });
 
     const result = await model.generateContent([
-      buildImageAnalysisPrompt(),
+      buildImageAnalysisPrompt(note),
       { inlineData: { data: imageBase64, mimeType } },
     ]);
 
