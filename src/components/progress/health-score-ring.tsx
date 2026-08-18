@@ -39,7 +39,13 @@ export function HealthScoreRing({
   const thumbY = size / 2 + radius * Math.sin(thumbAngle);
 
   return (
-    <div className="flex flex-col items-center">
+    // Width-constrained to the ring's own size — otherwise the long
+    // delta/"not enough data" caption below it has no width to wrap against,
+    // so the browser widens this whole (shrink-0, in the hero row) column to
+    // fit that line unbroken, stealing space from the sibling text column
+    // and squeezing it to a near-unreadable sliver (real bug, confirmed via
+    // a static repro before this fix).
+    <div className="flex w-44 flex-col items-center text-center">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" style={{ filter: glow }}>
           <defs>

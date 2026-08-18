@@ -92,7 +92,7 @@ export function WeightCard({
           <div className="mt-1.5 flex items-center justify-between gap-2">
             {periodDelta !== null ? (
               <span
-                className={`flex items-center gap-1 text-xs font-medium ${
+                className={`flex min-w-0 flex-1 items-center gap-1 text-xs font-medium ${
                   periodDelta === 0 || movedTowardGoal === null
                     ? "text-black/45 dark:text-white/45"
                     : movedTowardGoal
@@ -101,10 +101,17 @@ export function WeightCard({
                 }`}
               >
                 {periodDelta !== 0 && movedTowardGoal !== null && (movedTowardGoal ? <ArrowDown size={11} /> : <ArrowUp size={11} />)}
-                {periodDelta === 0 ? "No change this period" : `${periodDelta > 0 ? "+" : ""}${periodDelta} ${currentWeight.unit} this period`}
+                {/* min-w-0 on the span lets this truncate/wrap instead of
+                    forcing the shrink-0 BMI badge's row to overflow — this
+                    was a real bug (confirmed via a static repro): without
+                    it, mobile Safari squeezed this text into a near-
+                    unreadable single-word-per-line column. */}
+                <span className="truncate">
+                  {periodDelta === 0 ? "No change this period" : `${periodDelta > 0 ? "+" : ""}${periodDelta} ${currentWeight.unit} this period`}
+                </span>
               </span>
             ) : (
-              <span className="text-xs text-black/35 dark:text-white/35">Not logged this period</span>
+              <span className="min-w-0 flex-1 truncate text-xs text-black/35 dark:text-white/35">Not logged this period</span>
             )}
 
             {bmiCategory && (

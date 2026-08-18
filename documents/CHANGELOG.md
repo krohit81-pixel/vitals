@@ -2,6 +2,30 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.9.3
+
+- **Fixed a real layout bug**: on Progress, the Health Score hero card's text
+  ("Just getting going", "Average of 3 targets...") and the Weight card's
+  "Not logged this period" / delta text next to the BMI badge could both
+  wrap into an unreadable single-word-per-line sliver on phone widths.
+  - Root cause (confirmed via a static repro before fixing): `HealthScoreRing`'s
+    outer column had no width constraint, so its own unconstrained "vs last
+    period" / "not enough data" caption forced the whole `shrink-0` ring
+    column wider than its actual 176px ring to avoid wrapping that line —
+    stealing space from the sibling text column, which then collapsed.
+    Fixed by giving that column an explicit `w-44` (176px, matching the
+    ring's own size) so its own captions wrap within their own footprint
+    instead of expanding.
+  - `WeightCard`'s bottom row had the classic missing-`min-w-0`-next-to-a-
+    `shrink-0`-sibling bug: the delta/"not logged" text had no `min-w-0
+    flex-1`, so next to the fixed-width BMI badge it had nowhere correct to
+    shrink into. Fixed with `min-w-0 flex-1 truncate` (ellipsis instead of
+    wrapping, since it's a compact single-line row).
+  - Audited every other Progress/Dashboard/Coach card with a similar
+    ring-or-badge-plus-text layout (`RhythmGauge`, `StreakCard`,
+    `HeartRateCard`, `ActivityCard`, `InsightCard`) — none had the same
+    unconstrained-width pattern, so no other changes were needed.
+
 ## v0.9.2
 
 - **Optional note when logging a meal from a photo.** "Take Photo" / "Upload
