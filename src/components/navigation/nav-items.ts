@@ -16,7 +16,7 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 // Bottom nav shows 4 tabs (2 either side of the floating capture button).
-// Profile moves into HeaderMenu's dropdown (the header hamburger) on mobile
-// instead — see header-menu.tsx — and stays in the sidebar's full list on
-// desktop, where HeaderMenu's own Profile row hides itself accordingly.
+// Profile moves to the header's hamburger button on mobile instead — see
+// HeaderMenu, a direct /profile shortcut, not a dropdown — and stays in the
+// sidebar's full list on desktop, where HeaderMenu hides itself accordingly.
 export const TAB_ITEMS: NavItem[] = NAV_ITEMS.filter((item) => item.href !== "/profile");

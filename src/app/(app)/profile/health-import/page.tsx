@@ -10,10 +10,10 @@ import { importHealthDataAction, type ImportResult } from "./actions";
 
 const initialState: ImportResult = {};
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" size="lg" className="w-full" disabled={pending}>
+    <Button type="submit" size="lg" className="w-full" disabled={pending || disabled}>
       {pending ? "Importing…" : "Import"}
     </Button>
   );
@@ -21,6 +21,11 @@ function SubmitButton() {
 
 export default function HealthImportPage() {
   const [state, formAction] = useActionState(importHealthDataAction, initialState);
+  // No feedback previously showed which file (if any) was picked, and the
+  // Import button looked enabled even with nothing selected (native HTML
+  // `required` only blocks the actual submit, silently, with no visual
+  // cue) — track the picked file explicitly so both are fixed.
+  const [fileName, setFileName] = useState<string | null>(null);
 
   // HealthSave's timestamps are genuinely UTC — the server has no way to know
   // what timezone to convert them to, so the browser has to tell it. Read
@@ -51,10 +56,27 @@ export default function HealthImportPage() {
       <form action={formAction} className="glass-card-solid space-y-4 p-5">
         <input type="hidden" name="timeZone" value={timeZone} />
 
-        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-emerald-500/30 bg-emerald-50 py-10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-          <UploadCloud size={26} />
-          <span className="text-sm font-medium">Choose HealthSave export (.json)</span>
-          <input type="file" name="file" accept="application/json,.json" required className="hidden" />
+        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-emerald-500/30 bg-emerald-50 px-4 py-10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+          {fileName ? (
+            <>
+              <CheckCircle2 size={26} />
+              <span className="max-w-full truncate text-sm font-medium">{fileName}</span>
+              <span className="text-xs font-normal opacity-70">Tap to choose a different file</span>
+            </>
+          ) : (
+            <>
+              <UploadCloud size={26} />
+              <span className="text-sm font-medium">Choose HealthSave export (.json)</span>
+            </>
+          )}
+          <input
+            type="file"
+            name="file"
+            accept="application/json,.json"
+            required
+            className="hidden"
+            onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+          />
         </label>
 
         {state.error && <p className="text-sm text-red-500">{state.error}</p>}
@@ -71,7 +93,7 @@ export default function HealthImportPage() {
           </Card>
         )}
 
-        <SubmitButton />
+        <SubmitButton disabled={!fileName} />
       </form>
     </div>
   );

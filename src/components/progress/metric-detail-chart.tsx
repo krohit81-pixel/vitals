@@ -27,6 +27,13 @@ export function MetricDetailChart({
   const dataMax = values.length > 0 ? Math.max(...values) : 1;
   const pad = Math.max((dataMax - dataMin) * 0.15, dataMax * 0.02, 0.5);
   const yDomain: [number, number] = [Math.max(0, dataMin - pad), dataMax + pad];
+  const round1 = (v: number) => Math.round(v * 10) / 10;
+  // Recharts' own "nice tick" generator (used when only `domain` is given)
+  // produced garbage (repeated "9999" labels) against a tight, non-round
+  // custom decimal domain like this one — a real bug hit in production.
+  // Sidestepping it entirely by computing our own evenly-spaced ticks is
+  // more robust than trying to coax their algorithm into behaving.
+  const yTicks = Array.from({ length: 4 }, (_, i) => round1(yDomain[0] + ((yDomain[1] - yDomain[0]) * i) / 3));
 
   return (
     <div className="h-72 w-full">
@@ -39,7 +46,10 @@ export function MetricDetailChart({
             </linearGradient>
           </defs>
           <YAxis
+            type="number"
             domain={yDomain}
+            ticks={yTicks}
+            tickFormatter={(v: number) => `${round1(v)}`}
             tick={{ fontSize: 11, fill: "currentColor", opacity: 0.4 }}
             axisLine={false}
             tickLine={false}

@@ -17,9 +17,9 @@ const HERO_SCROLL_CAP = 220;
  * compresses and parallax-drifts as you scroll away from it. Once you've
  * scrolled far enough that the hero isn't doing useful work anymore, a
  * slim frosted nav bar fades/slides in and pins to the true top — so
- * there's always brand orientation and a way to Profile/Reports/Display
- * settings via HeaderMenu, without the artwork permanently eating vertical
- * space.
+ * there's always brand orientation and a way back to Profile (via
+ * HeaderMenu, mobile only — desktop already has it in the sidebar), without
+ * the artwork permanently eating vertical space.
  *
  * Both the hero's floating menu button and the compact bar's are offset by
  * `env(safe-area-inset-top)` so neither sits under a notch/status bar when

@@ -2,6 +2,28 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.9.5
+
+- **Fixed a real Recharts bug**: `MetricDetailChart`'s new v0.9.4 auto-zoomed
+  Y-axis worked (top tick matched the computed domain max), but Recharts'
+  own "nice tick" generator produced garbage (repeated "9999" labels) against
+  a tight, non-round custom decimal domain. Fixed by computing the axis's
+  ticks explicitly (4 evenly-spaced, rounded to 1 decimal) instead of letting
+  Recharts guess them.
+- **Health import file picker now gives real feedback**: previously showed
+  the same static "Choose HealthSave export" prompt whether or not a file had
+  actually been picked, and the Import button looked enabled even with
+  nothing selected (native HTML `required` only blocked the actual submit,
+  silently). Now shows the picked filename in place of the prompt, and
+  Import stays disabled until a file is chosen.
+- **Header hamburger simplified back to a direct Profile link** — no more
+  dropdown. Weekly Reports and Display settings (the v0.9.0/v0.9.1 dropdown
+  contents) moved onto the Profile page itself as regular cards, alongside
+  Daily goals/Meal Shortcuts/Health Data/Personal details — "click the
+  hamburger, the Profile tab opens with all these options," per feedback that
+  splitting them across a separate dropdown and the Profile page was more
+  navigation than the feature warranted.
+
 ## v0.9.4
 
 - **Fixed weight/metric trend charts flattening small-but-real changes.**
