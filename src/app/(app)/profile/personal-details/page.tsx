@@ -10,7 +10,13 @@ export default async function PersonalDetailsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase.from("users").select("*").eq("id", user!.id).single();
+  const [{ data: profile }, { data: goals }] = await Promise.all([
+    supabase.from("users").select("*").eq("id", user!.id).single(),
+    // goal_weight_kg lives on `goals` (it's also what Progress's Weight card/
+    // chart and the achievements calc already read) — Personal Details is
+    // just where it's edited, not a second, separate value.
+    supabase.from("goals").select("goal_weight_kg").eq("user_id", user!.id).single(),
+  ]);
 
   const defaults = {
     full_name: profile?.full_name ?? "",
@@ -18,6 +24,7 @@ export default async function PersonalDetailsPage() {
     gender: profile?.gender ?? "prefer_not_to_say",
     height_cm: profile?.height_cm ?? ("" as number | ""),
     weight_kg: profile?.weight_kg ?? ("" as number | ""),
+    goal_weight_kg: goals?.goal_weight_kg ?? ("" as number | ""),
     activity_level: profile?.activity_level ?? "moderate",
     diet_type: profile?.diet_type ?? "non_vegetarian",
     units: profile?.units ?? "metric",

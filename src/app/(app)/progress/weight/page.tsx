@@ -81,7 +81,12 @@ export default async function ProgressWeightPage() {
       {entries.length > 0 ? (
         <>
           <Card>
-            <MetricDetailChart data={chartData} color="#3B82F6" unit={unit} />
+            <MetricDetailChart data={chartData} color="#3B82F6" unit={unit} goalValue={goals?.goal_weight_kg ?? null} />
+            {goals?.goal_weight_kg != null && (
+              <p className="mt-2 text-center text-[11px] text-black/35 dark:text-white/35">
+                Dashed line marks your goal weight ({goals.goal_weight_kg} kg)
+              </p>
+            )}
           </Card>
 
           <Card solid className="grid grid-cols-2 gap-4">

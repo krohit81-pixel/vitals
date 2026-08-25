@@ -14,6 +14,7 @@ export interface PersonalDetailsDefaults {
   gender: string;
   height_cm: number | "";
   weight_kg: number | "";
+  goal_weight_kg: number | "";
   activity_level: string;
   diet_type: string;
   units: string;
@@ -98,6 +99,17 @@ export function PersonalDetailsForm({ defaults }: { defaults: PersonalDetailsDef
         </Field>
       </div>
 
+      <Field label="Goal weight (kg)">
+        <Input
+          name="goal_weight_kg"
+          type="number"
+          inputMode="decimal"
+          min={0}
+          defaultValue={defaults.goal_weight_kg}
+          placeholder="Optional — where you're aiming for"
+        />
+      </Field>
+
       <Field label="Activity level">
         <Select
           name="activity_level"
@@ -144,7 +156,8 @@ export function PersonalDetailsForm({ defaults }: { defaults: PersonalDetailsDef
       <p className="text-xs text-black/40 dark:text-white/40">
         Used by AI Coach to tailor feedback and insights to you — e.g. protein needs relative to
         body weight, activity level, and dietary restrictions. Height/weight here are your baseline
-        profile, separate from your logged weight history on the Progress tab.
+        profile, separate from your logged weight history on the Progress tab. Goal weight shows up
+        there too — as a dashed line on the Weight chart and a % there in the Weight card.
       </p>
 
       <SaveButton />

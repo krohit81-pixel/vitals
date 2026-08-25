@@ -22,6 +22,7 @@ export async function updatePersonalDetailsAction(
   const ageRaw = formData.get("age") as string;
   const heightRaw = formData.get("height_cm") as string;
   const weightRaw = formData.get("weight_kg") as string;
+  const goalWeightRaw = formData.get("goal_weight_kg") as string;
   const allergiesRaw = (formData.get("allergies") as string) ?? "";
 
   const { error } = await supabase
@@ -49,9 +50,21 @@ export async function updatePersonalDetailsAction(
 
   if (error) return { error: error.message };
 
+  // goal_weight_kg lives on `goals`, not `users` — this is the one field on
+  // this form that isn't a `users` column. It's the same value Progress's
+  // Weight card/chart and the achievements calc already read, so this is
+  // just giving it somewhere to be edited, not a second source of truth.
+  const { error: goalsError } = await supabase
+    .from("goals")
+    .update({ goal_weight_kg: goalWeightRaw ? Number(goalWeightRaw) : null })
+    .eq("user_id", user.id);
+
+  if (goalsError) return { error: goalsError.message };
+
   // Coach and Progress read these fields to tailor their AI feedback/insights.
   revalidatePath("/profile");
   revalidatePath("/coach");
   revalidatePath("/progress");
+  revalidatePath("/reports");
   redirect("/profile");
 }

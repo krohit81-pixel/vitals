@@ -2,6 +2,30 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v1.0.0 — first stable release
+
+- **Goal weight is now actually settable.** `goals.goal_weight_kg` has been
+  read by the Weight card, the Weight detail page, and the achievements/
+  Weekly Report calculations since early on, but there was never a form
+  field to set it — it always showed "Goal: Not set." Added a **Goal weight
+  (kg)** field to Personal Details (optional; writes to `goals`, the same
+  field everything else already reads — not a second, competing value).
+  Everywhere downstream lights up automatically now that it can be non-null:
+  the Weight card's "X% there," the Weight detail page's Goal stat and
+  projected-goal-date, and the "Weight Goal 50%" achievement.
+- **Weight chart now shows the goal, not just the number.** The Weight
+  detail page's chart gets a dashed reference line at the goal weight
+  (included in the chart's own auto-zoomed axis range so it's never clipped
+  off-screen even if it's outside your logged history's min/max), with a
+  caption underneath. `MetricDetailChart`'s new `goalValue` prop is optional
+  and only used by the Weight page — the generic steps/heart-rate/HRV detail
+  pages are unaffected.
+- Marked **v1.0** — the core loop (AI meal logging across photo/voice/manual,
+  workouts, weight, Apple Health import, Dashboard/Progress/AI Coach
+  analytics, Weekly Reports, dark/light/system theming) has been through
+  several rounds of real-usage bug fixes (see v0.9.x below) and is
+  considered stable enough to call a 1.0.
+
 ## v0.9.5
 
 - **Fixed a real Recharts bug**: `MetricDetailChart`'s new v0.9.4 auto-zoomed

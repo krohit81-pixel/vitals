@@ -1,16 +1,23 @@
 "use client";
 
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { parseDateString } from "@/lib/nutrition/date";
+
+const GOAL_COLOR = "#10B981"; // emerald — same "target/on-track" color used everywhere else (Health Score, WeightCard's goal delta)
 
 export function MetricDetailChart({
   data,
   color,
   unit,
+  goalValue,
 }: {
   data: Array<{ date: string; value: number }>;
   color: string;
   unit: string;
+  /** Optional reference line (e.g. goal weight) — omit for metrics with no
+   * target concept. Included in the axis's own min/max so it's never
+   * clipped off-chart even when it's outside the logged data's range. */
+  goalValue?: number | null;
 }) {
   // Recharts' default YAxis domain is `[0, niceRoundMax]` — fine for a
   // metric that naturally spans that whole range, but it flattens anything
@@ -23,8 +30,9 @@ export function MetricDetailChart({
   // padding is relative (% of range) with an absolute floor for a
   // near-flat/single-point series, rather than anything weight-specific.
   const values = data.map((d) => d.value).filter((v) => Number.isFinite(v));
-  const dataMin = values.length > 0 ? Math.min(...values) : 0;
-  const dataMax = values.length > 0 ? Math.max(...values) : 1;
+  const withGoal = goalValue != null && Number.isFinite(goalValue) ? [...values, goalValue] : values;
+  const dataMin = withGoal.length > 0 ? Math.min(...withGoal) : 0;
+  const dataMax = withGoal.length > 0 ? Math.max(...withGoal) : 1;
   const pad = Math.max((dataMax - dataMin) * 0.15, dataMax * 0.02, 0.5);
   const yDomain: [number, number] = [Math.max(0, dataMin - pad), dataMax + pad];
   const round1 = (v: number) => Math.round(v * 10) / 10;
@@ -70,6 +78,9 @@ export function MetricDetailChart({
             contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 8px 30px -6px rgba(0,0,0,0.15)", fontSize: 12 }}
           />
           <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.5} fill="url(#metric-detail-fill)" />
+          {goalValue != null && Number.isFinite(goalValue) && (
+            <ReferenceLine y={goalValue} stroke={GOAL_COLOR} strokeWidth={1.5} strokeDasharray="4 4" />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </div>

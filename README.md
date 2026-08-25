@@ -12,7 +12,7 @@ know the history. Then check `documents/CHANGELOG.md`'s most recent entries (new
 first) for exactly what shipped last, and `documents/BACKLOG.md` for what's
 deliberately not built yet.
 
-**Current version:** see `version` in `package.json` (as of this writing, `0.9.1`).
+**Current version:** see `version` in `package.json` (as of this writing, `1.0.0`).
 
 ---
 
@@ -21,10 +21,11 @@ deliberately not built yet.
 - **Auth & shell** — Supabase Auth, bottom nav (mobile) / sidebar (desktop), 5 tabs:
   Dashboard, Meals, Progress, AI Coach, Profile. Every page shares one `AppHeader`
   (collapsing hero banner using `public/header_new.PNG` → compact frosted bar on
-  scroll) and one `AppFooter` (version + credit line). Since v0.9.0 the header also
-  carries a version label + hamburger menu (`HeaderMenu`) — Weekly Reports and Display
-  settings, reachable from every tab but deliberately not part of the 5-tab bottom nav.
-- **Weekly Reports** (`/reports`, hamburger menu → Weekly Reports) — auto-generated,
+  scroll) and one `AppFooter` (version + credit line). The header also carries a
+  version label + hamburger (`HeaderMenu`) — a direct shortcut to Profile on mobile
+  (desktop already has Profile in the sidebar); Weekly Reports and Display settings
+  live as regular cards *on* the Profile page itself, not a separate dropdown.
+- **Weekly Reports** (`/reports`, from Profile → Weekly Reports) — auto-generated,
   fully deterministic (no AI call) per-week summary: focus areas (reusing Progress's
   own `calcWeekConsistencyDetails`/`ScoreBreakdown`), accomplishments (reusing
   `computeAchievements`), and a suggested focus for next week based on the weakest
@@ -41,10 +42,13 @@ deliberately not built yet.
 - **Workouts** — manual CRUD, 12 types, folded into the same energy-balance math and
   timeline as meals.
 - **Weight** — quick-add (backdatable) + history/edit, folded into Progress analytics.
-- **Personal details** (`/profile/personal-details`) — height, weight, age, gender,
-  activity level, diet type, allergies, units. Feeds both the AI Coach and Progress
-  Insights prompts as optional context (only ever references fields actually filled
-  in), and drives the BMI shown on Progress.
+  Goal weight (set on Personal Details) shows as a dashed reference line on the Weight
+  detail chart and a "% there" delta on the Weight card.
+- **Personal details** (`/profile/personal-details`) — height, weight, goal weight, age,
+  gender, activity level, diet type, allergies, units. Feeds both the AI Coach and
+  Progress Insights prompts as optional context (only ever references fields actually
+  filled in), and drives the BMI shown on Progress. Goal weight writes to `goals`, not
+  `users` — same field the Weight card/chart and achievements already read.
 - **Apple Health data** — **not a live sync** (see below) — manual JSON import from
   the HealthSave export app, with cross-source duplicate detection against
   manually-logged workouts.
@@ -164,8 +168,8 @@ src/
       coach/                           — AI Coach hero + insights + rhythm score
       profile/                         — settings, goals, meal shortcuts, health import,
                                           personal-details/ (height/weight/age/etc.)
-      reports/                         — Weekly Reports (v0.9.0), reachable only from
-                                          the header's hamburger menu — deterministic,
+      reports/                         — Weekly Reports, reachable from Profile — not
+                                          one of the 5 bottom-nav tabs — deterministic,
                                           no AI call; window.print() for PDF
     api/                               — Route Handlers (currently none live — the
                                           Apple Health sync route was removed)
@@ -174,7 +178,7 @@ src/
     ui/                                — Button, Card, Input
     navigation/                        — Sidebar, BottomNav, CaptureSheet, NavShell,
                                           AppHeader (collapsing hero), AppFooter,
-                                          HeaderMenu (v0.9.0 hamburger dropdown)
+                                          HeaderMenu (hamburger → Profile shortcut)
     dashboard/, progress/, coach/,     — feature-scoped presentational components —
       analytics/, capture/, workouts/,   progress/ holds the redesigned Progress tab's
       meals/, profile/, shared/          cards: score-breakdown, weight-card,
