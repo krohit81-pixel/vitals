@@ -12,6 +12,22 @@ export function MetricDetailChart({
   color: string;
   unit: string;
 }) {
+  // Recharts' default YAxis domain is `[0, niceRoundMax]` — fine for a
+  // metric that naturally spans that whole range, but it flattens anything
+  // where the *meaningful* variation is small relative to the absolute
+  // value (weight is the clearest case: an 85 → 84.1kg drop is a real,
+  // decent result, but on a 0–100 axis it reads as a flat line hugging the
+  // top). Zoom the axis to the actual data range instead, padded so the
+  // line never touches the very top/bottom edge — this component is shared
+  // by every metric detail chart (weight, steps, heart rate, HRV, …), so the
+  // padding is relative (% of range) with an absolute floor for a
+  // near-flat/single-point series, rather than anything weight-specific.
+  const values = data.map((d) => d.value).filter((v) => Number.isFinite(v));
+  const dataMin = values.length > 0 ? Math.min(...values) : 0;
+  const dataMax = values.length > 0 ? Math.max(...values) : 1;
+  const pad = Math.max((dataMax - dataMin) * 0.15, dataMax * 0.02, 0.5);
+  const yDomain: [number, number] = [Math.max(0, dataMin - pad), dataMax + pad];
+
   return (
     <div className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -22,7 +38,13 @@ export function MetricDetailChart({
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <YAxis tick={{ fontSize: 11, fill: "currentColor", opacity: 0.4 }} axisLine={false} tickLine={false} width={36} />
+          <YAxis
+            domain={yDomain}
+            tick={{ fontSize: 11, fill: "currentColor", opacity: 0.4 }}
+            axisLine={false}
+            tickLine={false}
+            width={36}
+          />
           <XAxis
             dataKey="date"
             tickFormatter={(d: string) => parseDateString(d).toLocaleDateString(undefined, { month: "short", day: "numeric" })}

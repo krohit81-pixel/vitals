@@ -2,6 +2,19 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v0.9.4
+
+- **Fixed weight/metric trend charts flattening small-but-real changes.**
+  `MetricDetailChart` (shared by the Weight detail page and the generic
+  steps/heart-rate/HRV metric detail pages) left `YAxis` without an explicit
+  `domain`, so Recharts defaulted to `[0, niceRoundMax]` — an 85 → 84.1kg
+  drop over a month rendered as a flat line hugging the top of a 0–100 axis,
+  making a real result look like nothing happened. The Y-axis now zooms to
+  the actual data's min/max with proportional padding (15% of the range, a 2%
+  of-max floor for near-flat series, never below 0) instead of always
+  anchoring at zero — same fix benefits every metric this chart is used for,
+  not just weight.
+
 ## v0.9.3
 
 - **Fixed a real layout bug**: on Progress, the Health Score hero card's text
