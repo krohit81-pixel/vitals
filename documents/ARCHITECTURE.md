@@ -142,7 +142,77 @@ code and `schema.sql` both look correct (hit once with `health_insights` in v0.8
 **When adding a new table:** call this out explicitly as a required manual step, don't
 assume editing `schema.sql` was sufficient.
 
-### 8. This sandbox can't run a full `next build` — verify with `tsc` + `eslint` instead
+### 8. Flex children need `min-w-0` next to a `shrink-0` sibling — and a `shrink-0` column needs its own width if it holds unconstrained text
+
+**Hit twice in the same round (v0.9.3), both on Progress:**
+- `WeightCard`'s bottom row (`flex justify-between`) put the weight-delta text next
+  to a fixed-width `shrink-0` BMI badge, but the text `<span>` had no `min-w-0`.
+  Flex items default to `min-width: auto`, which means "don't shrink below your
+  content's natural width" — so next to a sibling that refuses to shrink, the text
+  had nowhere correct to go and mobile Safari squeezed it into a near-unreadable
+  single-word-per-line column instead. Fixed with `min-w-0 flex-1 truncate`.
+- `HealthScoreRing`'s outer wrapper was `shrink-0` with **no width of its own** —
+  fine as long as its children never needed to wrap, but its own delta/"not enough
+  data" caption text had nothing to wrap *against*, so the browser widened the
+  whole column past the ring's actual 176px to keep that caption on one line —
+  stealing space from the sibling text column next to it, same squeeze as above
+  but from the opposite direction (the `shrink-0` element growing instead of its
+  sibling collapsing). Fixed by giving the column an explicit `w-44` (176px,
+  matching the ring's own size) so its own captions wrap within their own
+  footprint instead of expanding the column.
+
+**Takeaway:** any `flex` row where one side is `shrink-0` — a fixed badge, a fixed
+ring/icon — needs the *other* side to have `min-w-0` (plus `flex-1` if it should
+fill remaining space) so it can actually shrink/wrap correctly. And a `shrink-0`
+column that contains its own multi-line or variable-length text needs an explicit
+width too, or its own content can push the column wider than intended. Both bugs
+were confirmed via a static HTML repro (matching the real Tailwind classes) before
+patching — worth doing again for any layout bug that isn't obviously root-caused
+from reading the JSX alone, since flexbox sizing interactions like this are easy
+to misjudge without seeing it render.
+
+### 9. Recharts: don't trust the default Y-axis domain, and don't trust its "nice tick" generator against a custom domain either
+
+**Hit twice in back-to-back rounds (v0.9.4, v0.9.5), same component
+(`MetricDetailChart`), two different Recharts defaults:**
+- With no explicit `domain`, `<YAxis>` defaults to roughly `[0, niceRoundMax]`.
+  Fine for a metric that naturally spans that whole range, but wrong for one where
+  the *meaningful* variation is small relative to the absolute value — an 85 →
+  84.1kg weight drop over a month rendered as a flat line hugging the top of a
+  0–100 axis, making a real result look like nothing happened. Fixed by computing
+  `[dataMin - pad, dataMax + pad]` from the actual data (proportional padding, with
+  an absolute floor for a near-flat/single-point series) and passing it as
+  `domain` explicitly.
+- Once a custom `domain` was passed, Recharts' own tick-generation algorithm (used
+  whenever you supply `domain` but not `ticks`) produced garbage — repeated
+  "9999" labels — against that tight, non-round decimal domain. This looks like a
+  real edge-case bug in their "nice tick" step-size calculation, not a mistake in
+  our domain math (the domain's own min/max rendered correctly; only the
+  in-between ticks were wrong). Fixed by computing the ticks ourselves (evenly
+  spaced, rounded to 1 decimal) and passing `ticks` explicitly instead of letting
+  Recharts derive them.
+
+**Takeaway:** for any chart where the axis needs to zoom to the data (not start at
+zero), set **both** `domain` and `ticks` explicitly — don't supply one and let
+Recharts infer the other. This is exactly what `MetricDetailChart` does now; copy
+that pattern rather than adding a bare `domain` prop to a new chart and assuming
+the ticks will render sanely.
+
+### 10. Header navigation churned twice before landing — don't re-add a dropdown
+
+The header's hamburger button went through three shapes in three consecutive
+rounds: v0.9.0 added a real dropdown panel (Weekly Reports + Display settings)
+next to a separate `ProfileMenuButton`; v0.9.1 folded Profile into that same
+dropdown (three items, one panel); v0.9.5 reverted it entirely — the hamburger is
+now just a plain link to `/profile` (`HeaderMenu`, no dropdown, no
+`AnimatePresence`), and Weekly Reports + the theme toggle live as regular cards
+*on* the Profile page itself. This wasn't a bug, it was a real product decision
+made after actually using the dropdown version — but if you're tempted to move
+Weekly Reports or Display settings into a header dropdown again "for
+discoverability," know that this was already tried and deliberately walked back.
+Profile is the one place all of this lives now.
+
+### 11. This sandbox can't run a full `next build` — verify with `tsc` + `eslint` instead
 
 A production Next.js build reliably exceeds this environment's per-command timeout,
 even with a warm `.next/cache` (confirmed via both foreground and backgrounded attempts
@@ -276,7 +346,7 @@ file — add new tables to that loop's array, don't hand-write per-table policie
 | Table | Purpose |
 |---|---|
 | `users` | Profile info, extends `auth.users`. Auto-created via `handle_new_user()` trigger on signup. Since v0.8.1 also holds the Personal Details fields — `age`, `gender`, `height_cm`, `weight_kg`, `activity_level`, `diet_type`, `allergies`, `units` — editable at `/profile/personal-details`, fed into AI Coach/Progress Insights prompts as optional context and used to compute BMI on Progress. |
-| `goals` | Daily targets (calories/macros/water/goal weight). Auto-created on signup with sane defaults. |
+| `goals` | Daily targets (calories/macros/water) + `goal_weight_kg`. Auto-created on signup with sane defaults. `goal_weight_kg` was readable everywhere (Weight card, Weight detail page, achievements) since early on but had no form to *set* it until v1.0.0 — it's now editable from `/profile/personal-details` even though it lives on this table, not `users` (see `personal-details/actions.ts` — that page's Server Action updates both tables). If you add a new field like this, put the write next to whichever table already owns it, don't create a shadow column just because the edit form lives elsewhere. |
 | `meal_logs` | Logged meals — items, macros, confidence, AI explanation, source (photo/manual/voice). `logged_at` is user-editable/backdatable (v0.8.2), not locked to insert time. |
 | `meal_images` | Storage paths for meal photos (private bucket, signed URLs on read). |
 | `daily_totals` | Recomputed from `meal_logs` on every save/edit/delete, for whichever date the meal actually landed on (not always "today," since meals can be backdated) — source of truth is always `meal_logs`, this is a denormalized rollup for fast range queries. |
@@ -287,6 +357,7 @@ file — add new tables to that loop's array, don't hand-write per-table policie
 | `settings` | Dark mode, notification prefs. (Also briefly held Apple Health Shortcuts-bridge fields — removed along with that feature; check `CHANGELOG.md` if you see references to it in old docs.) |
 | `ai_feedback` | AI Coach's generated summary + recommendations. Written to on-demand (manual "Generate"/"Regenerate" button, not auto-called on page load) via `generateCoachFeedbackAction` — each generation is a new row so the UI can show "last generated at." |
 | `health_insights` | Progress tab's "Insights" card — same on-demand/new-row-per-generation pattern as `ai_feedback`, via `generateHealthInsightsAction`. Added in `schema.sql` in v0.7; if you see `PGRST205: could not find the table` at runtime, the live database's schema cache hasn't caught up — see bug class #7 above, this needs a manual step in the Supabase SQL Editor, not a code fix. |
+| `weekly_reports` | Weekly Reports (`/reports`, v0.9.0) — fully deterministic content (no AI call), computed from the same functions Progress already uses. Unlike `ai_feedback`/`health_insights` (new row per generation), a week has a stable identity: `unique (user_id, week_start)`, so "Generate" upserts in place instead of accumulating rows. Same bug class #7 manual-SQL-Editor-step caveat applies — added in `schema.sql`, needs to actually be run against the live database. |
 
 **Dedup patterns worth knowing:**
 - `workout_logs`: unique `(user_id, health_workout_id)` — plain constraint, not

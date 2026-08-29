@@ -3,9 +3,10 @@
 Deferred items and known limitations only. **For what's already shipped, see
 `CHANGELOG.md`** — this file used to mix both together, which got confusing about
 which one was current; now it's just the "not built yet" list. **For what's actively
-requested next (not just deferred-for-later)**, see the "Requested next" section in
-`CHANGES.md` — currently the v1.5 hamburger menu / Weekly Reports / display settings
-ask, which has open questions that need answering before it's built.
+requested next**, see `CHANGES.md` — as of v1.0.0 there's no open ask sitting there;
+the last one (hamburger menu / Weekly Reports / display settings) shipped, iterated
+through v0.9.1 and v0.9.5, and is documented as settled in `ARCHITECTURE.md` bug
+class #10.
 
 ---
 
@@ -13,7 +14,9 @@ ask, which has open questions that need answering before it's built.
 
 - **Auto-calculate calorie/macro goals from a goal weight**, instead of manually typing
   targets on `/profile/goals`. Needs a formula decision first (activity level × goal
-  weight × timeline, e.g. Mifflin-St Jeor or similar) before it's buildable.
+  weight × timeline, e.g. Mifflin-St Jeor or similar) before it's buildable. Goal
+  weight itself is now settable (`/profile/personal-details`, v1.0.0) — this item is
+  specifically about deriving the *other* targets from it, not about capturing it.
 
 - **Store each user's IANA timezone** (e.g. captured client-side via
   `Intl.DateTimeFormat().resolvedOptions().timeZone` at signup) — the one real fix that

@@ -11,10 +11,10 @@ anything) still needs a manual step before new work.
 1. **`README.md`** (repo root) — what the app is, current feature set, stack, setup.
 2. **`documents/ARCHITECTURE.md`** — patterns and conventions, and the specific bug
    classes this codebase has already hit (Server/Client boundary rules, timezone
-   correctness, schema.sql ordering, consistency direction, dead code that can't be
-   deleted from a sandboxed environment). Read this before touching any of those areas
-   — several of these bugs have been reintroduced more than once by not checking here
-   first.
+   correctness, schema.sql ordering, consistency direction, flexbox squeeze bugs,
+   Recharts axis/tick defaults, dead code that can't be deleted from a sandboxed
+   environment). Read this before touching any of those areas — several of these bugs
+   have been reintroduced more than once by not checking here first.
 3. **`documents/CHANGELOG.md`** — newest entries first; read at least the current
    version's entry to know what just shipped.
 4. **`documents/BACKLOG.md`** — deferred items and known limitations, so you don't
@@ -23,33 +23,21 @@ anything) still needs a manual step before new work.
 
 ## Current version
 
-Check `version` in `package.json` — as of this handoff, **`0.9.0`**.
+Check `version` in `package.json` — as of this handoff, **`1.0.0`** (first stable
+release — see `CHANGELOG.md`'s v1.0.0 entry).
 
-## Requested next: v1.5 — shipped in v0.9.0
+## Requested next
 
-The hamburger menu / Weekly Reports / display-settings request below was answered
-directly by Rohit (menu in the header compact bar; report content auto-generated from
-logged data, deterministic, no AI call; PDF via `window.print()`; theme toggle moved
-into the new menu, not duplicated) and built — see `CHANGELOG.md`'s v0.9.0 entry for
-what actually shipped. Original request preserved here for reference:
+Nothing open right now — the last standing request (hamburger menu / Weekly Reports /
+display settings, originally logged here as "v1.5") shipped in v0.9.0, was revised
+twice more based on real usage (v0.9.1, v0.9.5), and is now considered settled — see
+`ARCHITECTURE.md` bug class #10 before reopening that design. When Rohit asks for
+something new, log it here with his exact wording until it's built, then move the
+summary to `CHANGELOG.md` and clear this section back to "nothing open."
 
-> new section (hamburg menu) on the top.. (next to orbit vxxx) should have:
-> - prepare a new tab, this will create weekly reports.. which i can generate pdf
->   extracts.. things that are covered in that week.. what were the key focus areas,
->   key accomplishments and key deliverable for upcoming week.. should be able to
->   view/save pdf.. also option to go back to the app with the back button..
-> - add display settings (dark vs light mode)
->
-> whenever any process is happening, put the load/in progress ring, so that i know it
-> is working..
+## Outstanding manual step (unverified — check before relying on Insights or Weekly Reports)
 
-**Outstanding manual step**: `weekly_reports` (new table, v0.9.0) needs the same
-Supabase SQL Editor step called out below for `health_insights` — see that section,
-same root cause, now two tables waiting on it if neither has been run yet.
-
-## Outstanding manual step (unverified — check before relying on Progress Insights or Weekly Reports)
-
-`health_insights` (v0.7) and now `weekly_reports` (v0.9.0) were added to
+`health_insights` (v0.7) and `weekly_reports` (v0.9.0) were added to
 `supabase/schema.sql`. Development sandboxes in this project have never had a Postgres
 connection string or Supabase management token — only the anon/service-role API keys —
 so **new tables in `schema.sql` don't reach the live database automatically**; someone
@@ -61,6 +49,10 @@ this environment) — if Progress → "Generate insights" or Weekly Reports → 
 report" errors with `PGRST205`, re-run the whole `supabase/schema.sql` file (it's fully
 idempotent, safe to re-run end to end) in the Supabase SQL Editor.
 
+No new tables were added in v0.9.5–v1.0.0 (goal weight reuses the pre-existing
+`goals.goal_weight_kg` column), so there's nothing new to add to this list yet — just
+the same two tables above, if they haven't already been confirmed live.
+
 ## Working conventions worth knowing upfront
 
 - Every round of changes bumps `package.json`'s version and gets a new
@@ -69,5 +61,8 @@ idempotent, safe to re-run end to end) in the Supabase SQL Editor.
   reliably times out in this sandbox (see `ARCHITECTURE.md`). The person running this
   locally does `npm run build` themselves before pushing.
 - Changes are made directly in the repo; nothing gets delivered as a zip.
-- `git add` / `commit` / `push` are left for the person to run themselves — not run
-  automatically.
+- Recent rounds (v0.9.2 onward) have had `git add`/`commit`/`push` done directly when
+  asked to ("commit, merge and deploy") — a push to `main` auto-deploys to Vercel
+  production via its GitHub integration. Earlier guidance said to leave this to the
+  person; default to asking if it's unclear which mode a session is in, but doing it
+  when explicitly asked is the established pattern now.
