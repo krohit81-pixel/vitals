@@ -203,6 +203,25 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["weekly_reports"]["Row"]>;
       Relationships: never[];
       };
+      blood_pressure_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          systolic: number;
+          diastolic: number;
+          measured_at: string;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["blood_pressure_logs"]["Row"]> & {
+          user_id: string;
+          systolic: number;
+          diastolic: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["blood_pressure_logs"]["Row"]>;
+      Relationships: never[];
+      };
       settings: {
         Row: {
           user_id: string;

@@ -100,6 +100,21 @@ export default async function ProfilePage() {
         </Link>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Blood Pressure</CardTitle>
+        </CardHeader>
+        <p className="mb-3 text-sm text-black/50 dark:text-white/50">
+          Log systolic/diastolic readings with notes, and export your history as a PDF table — handy
+          to bring to an appointment.
+        </p>
+        <Link href="/blood-pressure">
+          <Button variant="outline" className="w-full">
+            Log Blood Pressure
+          </Button>
+        </Link>
+      </Card>
+
       <form action={signOutAction}>
         <Button type="submit" variant="outline" className="w-full">
           Sign out

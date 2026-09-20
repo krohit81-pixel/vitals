@@ -2,6 +2,24 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v1.1.0
+
+- **New Blood Pressure log** (Profile → Blood Pressure, `/blood-pressure`).
+  Manual entries — systolic, diastolic, date/time, an optional free-text note
+  — same CRUD shape as Weight (`weight_logs`): add at the top, tap an entry
+  to edit or delete. New `blood_pressure_logs` table, deliberately its own
+  table rather than folded into `health_metrics` (which is import-only and
+  never written to by a form).
+- **Export to PDF**: "Export PDF" triggers the browser's native
+  `window.print()`, same zero-dependency approach as Weekly Reports. The
+  printed output is a genuine `<table>` (Date & time / Systolic / Diastolic /
+  Notes) — a separate print-only element from the on-screen card list, not a
+  screenshot of it, so it actually reads as a tabular record.
+  **Required manual step**: `blood_pressure_logs` was added to
+  `supabase/schema.sql` — same as `health_insights`/`weekly_reports` before
+  it, this needs to be pasted into the Supabase SQL Editor (or the whole file
+  re-run) before logging a reading will work against the live database.
+
 ## v1.0.0 — first stable release
 
 - **Goal weight is now actually settable.** `goals.goal_weight_kg` has been

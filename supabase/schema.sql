@@ -231,6 +231,20 @@ create table if not exists public.weekly_reports (
   unique (user_id, week_start)
 );
 
+-- v1.1: Blood Pressure log (Profile → Blood Pressure) — manual entries, same
+-- shape/spirit as weight_logs (deliberately its own table rather than folded
+-- into health_metrics, which is import-only and never written to by a form).
+create table if not exists public.blood_pressure_logs (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  systolic integer not null,
+  diastolic integer not null,
+  measured_at timestamptz not null default now(),
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- Row Level Security: every user can only touch their own rows
 alter table public.users enable row level security;
 alter table public.goals enable row level security;
@@ -245,6 +259,7 @@ alter table public.health_metrics enable row level security;
 alter table public.meal_shortcuts enable row level security;
 alter table public.health_insights enable row level security;
 alter table public.weekly_reports enable row level security;
+alter table public.blood_pressure_logs enable row level security;
 
 do $$
 declare
@@ -253,7 +268,7 @@ begin
   for t in select unnest(array[
     'users','goals','meal_images','meal_logs',
     'daily_totals','weight_logs','ai_feedback','settings','workout_logs','health_metrics','meal_shortcuts',
-    'health_insights','weekly_reports'
+    'health_insights','weekly_reports','blood_pressure_logs'
   ])
   loop
     execute format($f$

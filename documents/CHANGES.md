@@ -23,8 +23,8 @@ anything) still needs a manual step before new work.
 
 ## Current version
 
-Check `version` in `package.json` — as of this handoff, **`1.0.0`** (first stable
-release — see `CHANGELOG.md`'s v1.0.0 entry).
+Check `version` in `package.json` — as of this handoff, **`1.1.0`** — see
+`CHANGELOG.md`'s v1.1.0 entry (Blood Pressure log + PDF export).
 
 ## Requested next
 
@@ -35,23 +35,25 @@ twice more based on real usage (v0.9.1, v0.9.5), and is now considered settled �
 something new, log it here with his exact wording until it's built, then move the
 summary to `CHANGELOG.md` and clear this section back to "nothing open."
 
-## Outstanding manual step (unverified — check before relying on Insights or Weekly Reports)
+## Outstanding manual step (unverified — check before relying on Insights, Weekly Reports, or Blood Pressure)
 
-`health_insights` (v0.7) and `weekly_reports` (v0.9.0) were added to
-`supabase/schema.sql`. Development sandboxes in this project have never had a Postgres
-connection string or Supabase management token — only the anon/service-role API keys —
-so **new tables in `schema.sql` don't reach the live database automatically**; someone
-has to run the SQL in the Supabase SQL Editor by hand. This was flagged once already for
-`health_insights` (a `PGRST205: could not find table 'public.health_insights'` error
-while testing v0.8.1) and the fix SQL was handed over at the time. Whether it was
-actually run since then isn't verifiable from here (no network access to Supabase from
-this environment) — if Progress → "Generate insights" or Weekly Reports → "Generate
-report" errors with `PGRST205`, re-run the whole `supabase/schema.sql` file (it's fully
-idempotent, safe to re-run end to end) in the Supabase SQL Editor.
+`health_insights` (v0.7), `weekly_reports` (v0.9.0), and now `blood_pressure_logs`
+(v1.1.0) were added to `supabase/schema.sql`. Development sandboxes in this project
+have never had a Postgres connection string or Supabase management token — only the
+anon/service-role API keys — so **new tables in `schema.sql` don't reach the live
+database automatically**; someone has to run the SQL in the Supabase SQL Editor by
+hand. This was flagged once already for `health_insights` (a `PGRST205: could not
+find table 'public.health_insights'` error while testing v0.8.1) and the fix SQL was
+handed over at the time. Whether any of the three has actually been run isn't
+verifiable from here (no network access to Supabase from this environment) — if
+Progress → "Generate insights", Weekly Reports → "Generate report", or Blood
+Pressure → "Add reading" errors with `PGRST205`, re-run the whole
+`supabase/schema.sql` file (it's fully idempotent, safe to re-run end to end) in the
+Supabase SQL Editor.
 
 No new tables were added in v0.9.5–v1.0.0 (goal weight reuses the pre-existing
-`goals.goal_weight_kg` column), so there's nothing new to add to this list yet — just
-the same two tables above, if they haven't already been confirmed live.
+`goals.goal_weight_kg` column) — `blood_pressure_logs` (v1.1.0) is the next one after
+`weekly_reports` that actually needs this step.
 
 ## Working conventions worth knowing upfront
 
