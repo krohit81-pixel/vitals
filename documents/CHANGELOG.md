@@ -2,6 +2,20 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v1.1.2
+
+- **Fixed "Export PDF" doing nothing** on Blood Pressure and Weekly Reports.
+  Root cause: `window.print()` silently no-ops on iOS when the app is
+  launched from the home-screen icon (`display: standalone` in
+  `manifest.json`) — a real WebKit limitation with no error and no dialog,
+  not a bug in the click handler itself. New `useIsStandalone()` hook
+  (`src/lib/use-standalone.ts`) detects this and both buttons now fall back
+  to a plain `<a target="_blank">` ("Open in Safari to Export PDF" /
+  export icon), which is what reliably breaks a standalone iOS PWA out into
+  a real Safari tab — printing works normally from there. Any *new* PDF
+  export button added later should use the same hook rather than calling
+  `window.print()` directly in an onClick.
+
 ## v1.1.1
 
 - **Log Blood Pressure from the home "+" sheet.** `CaptureSheet` (the

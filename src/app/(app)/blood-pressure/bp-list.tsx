@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Printer } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronRight, ExternalLink, Printer } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { LocalDateTime } from "@/components/shared/local-time";
+import { useIsStandalone } from "@/lib/use-standalone";
+import { cn } from "@/lib/utils";
 
 export interface BpEntry {
   id: string;
@@ -14,11 +17,30 @@ export interface BpEntry {
 }
 
 export function BloodPressureList({ entries }: { entries: BpEntry[] }) {
+  // window.print() silently does nothing on iOS when this page is running as
+  // an installed home-screen PWA — see use-standalone.ts. Fall back to a
+  // plain <a target="_blank"> (opens in real Safari, where print works) in
+  // that case instead of a button that looks clickable but does nothing.
+  const standalone = useIsStandalone();
+  const [href, setHref] = useState("");
+  useEffect(() => setHref(window.location.href), []);
+
   return (
     <>
-      <Button onClick={() => window.print()} variant="outline" size="md" className="w-full print:hidden">
-        <Printer size={16} /> Export PDF
-      </Button>
+      {standalone ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(buttonVariants({ variant: "outline", size: "md" }), "w-full print:hidden")}
+        >
+          <ExternalLink size={16} /> Open in Safari to Export PDF
+        </a>
+      ) : (
+        <Button onClick={() => window.print()} variant="outline" size="md" className="w-full print:hidden">
+          <Printer size={16} /> Export PDF
+        </Button>
+      )}
 
       {/* Interactive on-screen list — hidden on the printed page in favor of
           the plain table below, which is what "export in tabular format"

@@ -212,7 +212,36 @@ Weekly Reports or Display settings into a header dropdown again "for
 discoverability," know that this was already tried and deliberately walked back.
 Profile is the one place all of this lives now.
 
-### 11. This sandbox can't run a full `next build` — verify with `tsc` + `eslint` instead
+### 11. `window.print()` silently does nothing on iOS in standalone PWA mode
+
+**This is a real, shipped bug** (fixed v1.1.2): the "Export PDF" buttons on
+Blood Pressure and Weekly Reports (`window.print()` in an `onClick`, per the
+`report-view.tsx` v0.9.0 original) worked in a normal browser tab but did
+*nothing at all* — no error, no dialog — when the app was running as an
+installed home-screen PWA on iOS (`"display": "standalone"` in
+`public/manifest.json`, which this app deliberately supports — icons, safe
+areas, etc.). This is a WebKit limitation, not something a click handler can
+detect or work around in place; there's no event or promise rejection to
+catch, it just silently no-ops.
+
+**The fix:** `useIsStandalone()` (`src/lib/use-standalone.ts`) detects
+standalone mode client-side (`navigator.standalone` on iOS + the
+`(display-mode: standalone)` media query elsewhere). When true, the export
+control renders as a plain `<a href={currentUrl} target="_blank">` instead of
+a `window.print()` button — a real anchor with `target="_blank"` is what
+reliably breaks a standalone iOS PWA out into an actual Safari tab, where
+`window.print()` then works normally. `buttonVariants` is exported from
+`components/ui/button.tsx` specifically so this fallback `<a>` can match
+`Button`'s styling exactly instead of duplicating its Tailwind classes.
+
+**Takeaway:** any *new* PDF/print export control must use `useIsStandalone()`
+and this same `<a target="_blank">` fallback — don't call `window.print()`
+directly in an `onClick` again, even though it "works" when testing in a
+normal desktop/Android browser tab. This one is easy to ship without
+noticing, since it only breaks for users who've actually added the app to
+their home screen.
+
+### 12. This sandbox can't run a full `next build` — verify with `tsc` + `eslint` instead
 
 A production Next.js build reliably exceeds this environment's per-command timeout,
 even with a warm `.next/cache` (confirmed via both foreground and backgrounded attempts

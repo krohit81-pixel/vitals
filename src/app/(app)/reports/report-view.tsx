@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { CheckCircle2, Printer, RefreshCw, Flame, Dumbbell, Zap } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { CheckCircle2, ExternalLink, Printer, RefreshCw, Flame, Dumbbell, Zap } from "lucide-react";
 import { ScoreBreakdown, type ScoreBreakdownItem } from "@/components/progress/score-breakdown";
 import { LoadingRing } from "@/components/shared/loading-ring";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { useIsStandalone } from "@/lib/use-standalone";
+import { cn } from "@/lib/utils";
 import { generateWeeklyReportAction } from "./actions";
 
 export interface WeeklyReportStats {
@@ -36,6 +38,13 @@ export function ReportView({
   // Updates immediately on a successful Generate, without waiting for the
   // server-revalidated prop to round-trip back down.
   const [generatedAt, setGeneratedAt] = useState<string | null>(initialGeneratedAt);
+  // window.print() silently does nothing on iOS when running as an installed
+  // home-screen PWA — see use-standalone.ts. Fall back to opening in a real
+  // Safari tab in that case instead of a button that looks clickable but
+  // does nothing.
+  const standalone = useIsStandalone();
+  const [href, setHref] = useState("");
+  useEffect(() => setHref(window.location.href), []);
 
   const handleGenerate = () => {
     startTransition(async () => {
@@ -52,9 +61,21 @@ export function ReportView({
           {pending ? <LoadingRing size={15} className="text-white" /> : <RefreshCw size={15} />}
           {generatedAt ? "Regenerate report" : "Generate report"}
         </Button>
-        <Button onClick={() => window.print()} variant="outline" size="icon" aria-label="Save as PDF">
-          <Printer size={17} />
-        </Button>
+        {standalone ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open in Safari to export PDF"
+            className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
+          >
+            <ExternalLink size={17} />
+          </a>
+        ) : (
+          <Button onClick={() => window.print()} variant="outline" size="icon" aria-label="Save as PDF">
+            <Printer size={17} />
+          </Button>
+        )}
       </div>
 
       {generatedAt && (
