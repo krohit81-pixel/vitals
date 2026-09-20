@@ -12,7 +12,7 @@ know the history. Then check `documents/CHANGELOG.md`'s most recent entries (new
 first) for exactly what shipped last, and `documents/BACKLOG.md` for what's
 deliberately not built yet.
 
-**Current version:** see `version` in `package.json` (as of this writing, `1.1.0`).
+**Current version:** see `version` in `package.json` (as of this writing, `1.1.1`).
 
 ---
 
@@ -49,10 +49,11 @@ deliberately not built yet.
   Progress Insights prompts as optional context (only ever references fields actually
   filled in), and drives the BMI shown on Progress. Goal weight writes to `goals`, not
   `users` — same field the Weight card/chart and achievements already read.
-- **Blood Pressure log** (`/blood-pressure`, from Profile → Blood Pressure) —
-  manual systolic/diastolic entries with date/time and an optional note, same
-  add/edit/delete shape as Weight. "Export PDF" (`window.print()`) renders a
-  genuine `<table>` for the printed page, separate from the on-screen card list.
+- **Blood Pressure log** (`/blood-pressure`, from Profile → Blood Pressure, or
+  the home "+" sheet's "Log Blood Pressure" tile) — manual systolic/diastolic
+  entries with date/time and an optional note, same add/edit/delete shape as
+  Weight. "Export PDF" (`window.print()`) renders a genuine `<table>` for the
+  printed page, separate from the on-screen card list.
 - **Apple Health data** — **not a live sync** (see below) — manual JSON import from
   the HealthSave export app, with cross-source duplicate detection against
   manually-logged workouts.

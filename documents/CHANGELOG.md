@@ -2,6 +2,17 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v1.1.1
+
+- **Log Blood Pressure from the home "+" sheet.** `CaptureSheet` (the
+  floating-action-button menu with Add Water/Log Workout/Log Weight) gets a
+  new "Log Blood Pressure" tile — systolic, diastolic, backdatable date, and
+  an optional note, saved via the same `logBloodPressureAction` the
+  dedicated `/blood-pressure` page already used. No new Server Action, no
+  schema change — this is purely a second, faster entry point into the same
+  v1.1.0 feature, mirroring exactly how "Log Weight" and "Add Water" work
+  from the same sheet.
+
 ## v1.1.0
 
 - **New Blood Pressure log** (Profile → Blood Pressure, `/blood-pressure`).

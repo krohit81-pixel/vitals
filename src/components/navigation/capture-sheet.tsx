@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, ImagePlus, PenLine, Mic, Barcode, Droplets, Dumbbell, Scale, X, ArrowLeft, Check } from "lucide-react";
+import { Camera, ImagePlus, PenLine, Mic, Barcode, Droplets, Dumbbell, Scale, Stethoscope, X, ArrowLeft, Check } from "lucide-react";
 import { logWaterAction } from "@/lib/nutrition/water-actions";
 import { logWeightAction } from "@/app/(app)/weight/actions";
+import { logBloodPressureAction } from "@/app/(app)/blood-pressure/actions";
 import { localTodayString, parseDateString } from "@/lib/nutrition/date";
 
 /** Combines a "YYYY-MM-DD" date with the current time-of-day, so backdated
@@ -24,6 +25,7 @@ const ACTIONS = [
   { icon: Droplets, label: "Add Water", enabled: true },
   { icon: Dumbbell, label: "Log Workout", enabled: true },
   { icon: Scale, label: "Log Weight", enabled: true },
+  { icon: Stethoscope, label: "Log Blood Pressure", enabled: true },
   { icon: Barcode, label: "Barcode Scan", enabled: false },
 ] as const;
 
@@ -42,33 +44,42 @@ export function CaptureSheet({
   previousWeight: number | null;
   weightUnit: "kg" | "lb";
 }) {
-  const [view, setView] = useState<"menu" | "water" | "weight">("menu");
+  const [view, setView] = useState<"menu" | "water" | "weight" | "bp">("menu");
   const [customMl, setCustomMl] = useState("");
   const [weightValue, setWeightValue] = useState("");
   const [unit, setUnit] = useState<"kg" | "lb">(weightUnit);
+  const [bpSystolic, setBpSystolic] = useState("");
+  const [bpDiastolic, setBpDiastolic] = useState("");
+  const [bpNotes, setBpNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  // Defaults to today, editable for backdating a past water/weight entry.
+  // Defaults to today, editable for backdating a past water/weight/BP entry.
   // Set client-side in an effect (not directly in render) — same "today"
   // timezone rule as everywhere else in this app.
   const [today, setToday] = useState("");
   const [waterDate, setWaterDate] = useState("");
   const [weightDate, setWeightDate] = useState("");
+  const [bpDate, setBpDate] = useState("");
   useEffect(() => {
     const t = localTodayString();
     setToday(t);
     setWaterDate(t);
     setWeightDate(t);
+    setBpDate(t);
   }, []);
 
   const reset = () => {
     setView("menu");
     setCustomMl("");
     setWeightValue("");
+    setBpSystolic("");
+    setBpDiastolic("");
+    setBpNotes("");
     setSaved(false);
     setWaterDate(today);
     setWeightDate(today);
+    setBpDate(today);
   };
 
   const handleClose = () => {
@@ -95,6 +106,17 @@ export function CaptureSheet({
     });
   };
 
+  const saveBp = () => {
+    const systolic = Number(bpSystolic);
+    const diastolic = Number(bpDiastolic);
+    if (!systolic || !diastolic) return;
+    startTransition(async () => {
+      await logBloodPressureAction(systolic, diastolic, combineDateWithNow(bpDate || localTodayString()), bpNotes.trim() || undefined);
+      setSaved(true);
+      setTimeout(handleClose, 900);
+    });
+  };
+
   const handleMenuSelect = (label: string) => {
     if (label === "Add Water") {
       setView("water");
@@ -102,6 +124,10 @@ export function CaptureSheet({
     }
     if (label === "Log Weight") {
       setView("weight");
+      return;
+    }
+    if (label === "Log Blood Pressure") {
+      setView("bp");
       return;
     }
     onSelect(label);
@@ -297,6 +323,79 @@ export function CaptureSheet({
                     <button
                       disabled={pending || !weightValue}
                       onClick={saveWeight}
+                      className="w-full rounded-xl bg-emerald-500 py-3 text-sm font-medium text-white disabled:opacity-40"
+                    >
+                      {pending ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {view === "bp" && (
+              <>
+                <div className="mb-4 flex items-center justify-between">
+                  <button onClick={() => setView("menu")} className="rounded-full p-1.5 hover:bg-black/5 dark:hover:bg-white/10">
+                    <ArrowLeft size={18} />
+                  </button>
+                  <h2 className="font-display text-base font-medium">Log blood pressure</h2>
+                  <button onClick={handleClose} className="rounded-full p-1.5 hover:bg-black/5 dark:hover:bg-white/10">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {saved ? (
+                  <div className="flex flex-col items-center gap-2 py-8 text-emerald-600 dark:text-emerald-400">
+                    <Check size={28} />
+                    <p className="text-sm font-medium">
+                      {bpSystolic} / {bpDiastolic} mmHg logged
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-xs font-medium text-black/50 dark:text-white/50">Date</label>
+                      <input
+                        type="date"
+                        value={bpDate}
+                        max={today || undefined}
+                        onChange={(e) => setBpDate(e.target.value)}
+                        className="h-9 rounded-lg border border-black/[0.08] bg-white/70 px-2.5 text-sm outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder="Systolic"
+                        value={bpSystolic}
+                        onChange={(e) => setBpSystolic(e.target.value)}
+                        autoFocus
+                        className="h-14 flex-1 rounded-xl border border-black/[0.08] bg-white/70 px-4 text-2xl font-semibold tabular-nums outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                      />
+                      <span className="text-lg text-black/30 dark:text-white/30">/</span>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder="Diastolic"
+                        value={bpDiastolic}
+                        onChange={(e) => setBpDiastolic(e.target.value)}
+                        className="h-14 flex-1 rounded-xl border border-black/[0.08] bg-white/70 px-4 text-2xl font-semibold tabular-nums outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                      />
+                    </div>
+
+                    <textarea
+                      value={bpNotes}
+                      onChange={(e) => setBpNotes(e.target.value)}
+                      placeholder="Notes (optional)"
+                      rows={2}
+                      className="w-full resize-none rounded-xl border border-black/[0.08] bg-white/70 p-3 text-sm outline-none placeholder:text-black/35 focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04] dark:placeholder:text-white/35"
+                    />
+
+                    <button
+                      disabled={pending || !bpSystolic || !bpDiastolic}
+                      onClick={saveBp}
                       className="w-full rounded-xl bg-emerald-500 py-3 text-sm font-medium text-white disabled:opacity-40"
                     >
                       {pending ? "Saving…" : "Save"}
