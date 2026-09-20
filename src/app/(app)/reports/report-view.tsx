@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { CheckCircle2, ExternalLink, Printer, RefreshCw, Flame, Dumbbell, Zap } from "lucide-react";
+import { useState, useTransition } from "react";
+import { CheckCircle2, Printer, RefreshCw, Flame, Dumbbell, Zap } from "lucide-react";
 import { ScoreBreakdown, type ScoreBreakdownItem } from "@/components/progress/score-breakdown";
 import { LoadingRing } from "@/components/shared/loading-ring";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { useIsStandalone } from "@/lib/use-standalone";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { generateWeeklyReportAction } from "./actions";
+import { exportWeeklyReportPdf } from "./export-pdf";
 
 export interface WeeklyReportStats {
   avgCalories: number;
@@ -38,18 +37,24 @@ export function ReportView({
   // Updates immediately on a successful Generate, without waiting for the
   // server-revalidated prop to round-trip back down.
   const [generatedAt, setGeneratedAt] = useState<string | null>(initialGeneratedAt);
-  // window.print() silently does nothing on iOS when running as an installed
-  // home-screen PWA — see use-standalone.ts. Fall back to opening in a real
-  // Safari tab in that case instead of a button that looks clickable but
-  // does nothing.
-  const standalone = useIsStandalone();
-  const [href, setHref] = useState("");
-  useEffect(() => setHref(window.location.href), []);
+  const [exporting, startExport] = useTransition();
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const handleGenerate = () => {
     startTransition(async () => {
       const result = await generateWeeklyReportAction({ weekStart, weekEnd, focusAreas, accomplishments, upcomingFocus });
       setGeneratedAt(result.generated_at);
+    });
+  };
+
+  const handleExport = () => {
+    setExportError(null);
+    startExport(async () => {
+      try {
+        await exportWeeklyReportPdf({ weekLabel, focusAreas, accomplishments, upcomingFocus, stats });
+      } catch {
+        setExportError("Couldn't generate the PDF — try again.");
+      }
     });
   };
 
@@ -61,22 +66,12 @@ export function ReportView({
           {pending ? <LoadingRing size={15} className="text-white" /> : <RefreshCw size={15} />}
           {generatedAt ? "Regenerate report" : "Generate report"}
         </Button>
-        {standalone ? (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Open in Safari to export PDF"
-            className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
-          >
-            <ExternalLink size={17} />
-          </a>
-        ) : (
-          <Button onClick={() => window.print()} variant="outline" size="icon" aria-label="Save as PDF">
-            <Printer size={17} />
-          </Button>
-        )}
+        <Button onClick={handleExport} disabled={exporting} variant="outline" size="icon" aria-label="Export PDF">
+          {exporting ? <LoadingRing size={15} className="text-current" /> : <Printer size={17} />}
+        </Button>
       </div>
+
+      {exportError && <p className="text-xs text-red-500 print:hidden">{exportError}</p>}
 
       {generatedAt && (
         <p className="text-xs text-black/40 dark:text-white/40 print:hidden">

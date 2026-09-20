@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronRight, ExternalLink, Printer } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { ChevronRight, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LoadingRing } from "@/components/shared/loading-ring";
 import { LocalDateTime } from "@/components/shared/local-time";
-import { useIsStandalone } from "@/lib/use-standalone";
-import { cn } from "@/lib/utils";
+import { exportBloodPressurePdf } from "./export-pdf";
 
 export interface BpEntry {
   id: string;
@@ -17,30 +17,29 @@ export interface BpEntry {
 }
 
 export function BloodPressureList({ entries }: { entries: BpEntry[] }) {
-  // window.print() silently does nothing on iOS when this page is running as
-  // an installed home-screen PWA — see use-standalone.ts. Fall back to a
-  // plain <a target="_blank"> (opens in real Safari, where print works) in
-  // that case instead of a button that looks clickable but does nothing.
-  const standalone = useIsStandalone();
-  const [href, setHref] = useState("");
-  useEffect(() => setHref(window.location.href), []);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleExport = () => {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await exportBloodPressurePdf(entries);
+      } catch {
+        setError("Couldn't generate the PDF — try again.");
+      }
+    });
+  };
 
   return (
     <>
-      {standalone ? (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(buttonVariants({ variant: "outline", size: "md" }), "w-full print:hidden")}
-        >
-          <ExternalLink size={16} /> Open in Safari to Export PDF
-        </a>
-      ) : (
-        <Button onClick={() => window.print()} variant="outline" size="md" className="w-full print:hidden">
-          <Printer size={16} /> Export PDF
+      <div className="print:hidden">
+        <Button onClick={handleExport} disabled={pending} variant="outline" size="md" className="w-full">
+          {pending ? <LoadingRing size={15} className="text-current" /> : <Printer size={16} />}
+          {pending ? "Preparing PDF…" : "Export PDF"}
         </Button>
-      )}
+        {error && <p className="mt-2 text-center text-sm text-red-500">{error}</p>}
+      </div>
 
       {/* Interactive on-screen list — hidden on the printed page in favor of
           the plain table below, which is what "export in tabular format"
@@ -66,9 +65,10 @@ export function BloodPressureList({ entries }: { entries: BpEntry[] }) {
         ))}
       </div>
 
-      {/* Print-only tabular export — this is the actual PDF output
-          (window.print()'s "Save as PDF"). Nav chrome/buttons/the card list
-          above all hide themselves via print:hidden globally/here. */}
+      {/* Print-only table — a courtesy for anyone who prints manually
+          (Cmd/Ctrl+P) instead of using "Export PDF" above, which generates
+          the real PDF directly (see export-pdf.ts) and doesn't depend on
+          this markup or the browser's print dialog at all. */}
       <table className="hidden w-full border-collapse text-left text-sm print:table">
         <caption className="mb-3 text-left font-display text-lg font-semibold text-black">
           Vitals — Blood Pressure Log

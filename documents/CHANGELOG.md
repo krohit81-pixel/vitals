@@ -2,6 +2,24 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v1.1.3
+
+- **The v1.1.2 fix wasn't enough — "Export PDF" now actually generates a
+  PDF instead of depending on the browser at all.** v1.1.2's `<a
+  target="_blank">` fallback (for when `window.print()` no-ops in a
+  standalone iOS PWA) turned out unreliable too — a same-origin
+  `target="_blank"` navigation inside a standalone webview can silently
+  no-op the exact same way, so the symptom didn't actually go away. Real
+  fix: both "Export PDF" buttons (Blood Pressure, Weekly Reports) now
+  generate the PDF client-side with `jspdf` + `jspdf-autotable`
+  (lazy-loaded on click) and trigger a real file download — no print
+  dialog, no standalone-mode special-casing needed, works identically
+  everywhere. Removed the now-unnecessary `useIsStandalone()` hook. The
+  print-only markup/CSS is kept as a courtesy for manual Cmd/Ctrl+P
+  printing, but the button itself no longer depends on it. See
+  `ARCHITECTURE.md` bug class #11 for the full story (including why the
+  first fix looked right but wasn't) before touching either export button.
+
 ## v1.1.2
 
 - **Fixed "Export PDF" doing nothing** on Blood Pressure and Weekly Reports.

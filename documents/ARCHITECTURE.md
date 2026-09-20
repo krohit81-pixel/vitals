@@ -212,34 +212,47 @@ Weekly Reports or Display settings into a header dropdown again "for
 discoverability," know that this was already tried and deliberately walked back.
 Profile is the one place all of this lives now.
 
-### 11. `window.print()` silently does nothing on iOS in standalone PWA mode
+### 11. `window.print()` is fundamentally the wrong tool for "Export PDF" on iOS — don't rely on it, generate the PDF instead
 
-**This is a real, shipped bug** (fixed v1.1.2): the "Export PDF" buttons on
-Blood Pressure and Weekly Reports (`window.print()` in an `onClick`, per the
-`report-view.tsx` v0.9.0 original) worked in a normal browser tab but did
-*nothing at all* — no error, no dialog — when the app was running as an
-installed home-screen PWA on iOS (`"display": "standalone"` in
-`public/manifest.json`, which this app deliberately supports — icons, safe
-areas, etc.). This is a WebKit limitation, not something a click handler can
-detect or work around in place; there's no event or promise rejection to
-catch, it just silently no-ops.
+**This is a real, shipped bug, fixed twice — the first fix was wrong.**
+`window.print()` (used by the "Export PDF" buttons on Blood Pressure and
+Weekly Reports since `report-view.tsx`'s v0.9.0 original) worked in a normal
+browser tab but did *nothing at all* — no error, no dialog — when the app
+was running as an installed home-screen PWA on iOS (`"display": "standalone"`
+in `public/manifest.json`, which this app deliberately supports). This is a
+WebKit limitation with no event or promise rejection to catch; it just
+silently no-ops.
 
-**The fix:** `useIsStandalone()` (`src/lib/use-standalone.ts`) detects
-standalone mode client-side (`navigator.standalone` on iOS + the
-`(display-mode: standalone)` media query elsewhere). When true, the export
-control renders as a plain `<a href={currentUrl} target="_blank">` instead of
-a `window.print()` button — a real anchor with `target="_blank"` is what
-reliably breaks a standalone iOS PWA out into an actual Safari tab, where
-`window.print()` then works normally. `buttonVariants` is exported from
-`components/ui/button.tsx` specifically so this fallback `<a>` can match
-`Button`'s styling exactly instead of duplicating its Tailwind classes.
+**First attempt (v1.1.2, later proven insufficient):** detect standalone mode
+(`navigator.standalone` / `(display-mode: standalone)`) and fall back to a
+plain `<a href={currentUrl} target="_blank">`, on the theory that a real
+anchor click reliably breaks a standalone iOS PWA out into Safari, where
+`window.print()` then works. **This did not reliably work** — a same-origin
+`target="_blank"` navigation inside a standalone webview can just silently
+no-op too (no new tab, no visible change), which read to the user as the
+exact same "nothing happens" bug, just moved one step later.
 
-**Takeaway:** any *new* PDF/print export control must use `useIsStandalone()`
-and this same `<a target="_blank">` fallback — don't call `window.print()`
-directly in an `onClick` again, even though it "works" when testing in a
-normal desktop/Android browser tab. This one is easy to ship without
-noticing, since it only breaks for users who've actually added the app to
-their home screen.
+**Actual fix (v1.1.3):** stop depending on the browser's print chrome
+entirely. `export-pdf.ts` in both `blood-pressure/` and `reports/` generates
+the PDF client-side with `jspdf` + `jspdf-autotable` (dynamically
+`import()`ed inside the click handler, so the ~200KB only loads when someone
+actually exports) and triggers a real file download via `doc.save(filename)`
+— pure JS + Blob, no print dialog, no standalone-mode special-casing needed
+at all. This is the first PDF-generating dependency in the project (previously
+zero — see the v0.9.0 Weekly Reports decision that chose `window.print()`
+specifically to avoid one); that tradeoff is superseded now that
+`window.print()` is confirmed unreliable in this app's actual real-world
+usage pattern (installed as a home-screen PWA).
+
+**Takeaway:** any *new* PDF export control should call the same
+`jspdf`/`jspdf-autotable` pattern (see either `export-pdf.ts` for the exact
+shape — title/date text, `autoTable()` for tabular data, `doc.save()`), not
+`window.print()` in an `onClick`. The print-only markup/CSS (`print:hidden`,
+the print-only `<table>` in `bp-list.tsx`, the `print:*` classes throughout
+`report-view.tsx`) was deliberately left in place as a courtesy for anyone
+who prints manually via Cmd/Ctrl+P — that still works fine in a normal
+browser tab — but it is no longer what the "Export PDF" *button* itself
+depends on.
 
 ### 12. This sandbox can't run a full `next build` — verify with `tsc` + `eslint` instead
 

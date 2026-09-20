@@ -12,7 +12,7 @@ know the history. Then check `documents/CHANGELOG.md`'s most recent entries (new
 first) for exactly what shipped last, and `documents/BACKLOG.md` for what's
 deliberately not built yet.
 
-**Current version:** see `version` in `package.json` (as of this writing, `1.1.2`).
+**Current version:** see `version` in `package.json` (as of this writing, `1.1.3`).
 
 ---
 
@@ -29,8 +29,8 @@ deliberately not built yet.
   fully deterministic (no AI call) per-week summary: focus areas (reusing Progress's
   own `calcWeekConsistencyDetails`/`ScoreBreakdown`), accomplishments (reusing
   `computeAchievements`), and a suggested focus for next week based on the weakest
-  tracked metric. "Generate" snapshots it to `weekly_reports`; "Save PDF" is the
-  browser's native `window.print()` — no PDF library dependency.
+  tracked metric. "Generate" snapshots it to `weekly_reports`; "Export PDF" generates
+  a real PDF client-side (`jspdf`/`jspdf-autotable`) — see the PDF note below.
 - **Meal logging** — photo (Gemini Vision), manual text, voice (Web Speech API), with
   a confidence-based clarification-chip flow when the AI isn't sure about something.
   User-editable quick-add shortcuts (Profile → Meal Shortcuts). Entries are editable
@@ -52,8 +52,12 @@ deliberately not built yet.
 - **Blood Pressure log** (`/blood-pressure`, from Profile → Blood Pressure, or
   the home "+" sheet's "Log Blood Pressure" tile) — manual systolic/diastolic
   entries with date/time and an optional note, same add/edit/delete shape as
-  Weight. "Export PDF" (`window.print()`) renders a genuine `<table>` for the
-  printed page, separate from the on-screen card list.
+  Weight. "Export PDF" generates a real PDF client-side — see the PDF note below.
+- **PDF export** (Weekly Reports, Blood Pressure) — generated client-side with
+  `jspdf`/`jspdf-autotable` (lazy-loaded on click) rather than the browser's
+  `window.print()`, which turned out to silently do nothing on iOS when the
+  app is running as an installed home-screen PWA — see `ARCHITECTURE.md` bug
+  class #11 before touching either export button or adding a new one.
 - **Apple Health data** — **not a live sync** (see below) — manual JSON import from
   the HealthSave export app, with cross-source duplicate detection against
   manually-logged workouts.
@@ -107,6 +111,9 @@ before attempting to rebuild anything Apple Health-related.
 - **TailwindCSS** — theme in `tailwind.config.ts` (cream/graphite/emerald tokens)
 - **Framer Motion** for micro-interactions and ring animations
 - **Recharts** for all charts (bar/area/composed/pie)
+- **jsPDF + jspdf-autotable** for PDF export (Weekly Reports, Blood Pressure) —
+  generated client-side, not the browser's print dialog (see `ARCHITECTURE.md`
+  bug class #11 for why `window.print()` doesn't work here)
 - **shadcn/ui-style primitives** — hand-rolled in `src/components/ui`, no CLI dependency
 - **Supabase** — Postgres + Auth + Storage, Row Level Security on every table
 - **AI provider abstraction** (`src/lib/ai`) — Gemini (default), OpenAI, Claude, all
