@@ -54,22 +54,30 @@ export function CaptureSheet({
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  // Defaults to today, editable for backdating a past water/weight/BP entry.
-  // Set client-side in an effect (not directly in render) — same "today"
-  // timezone rule as everywhere else in this app.
+  // Defaults to today/now, editable for backdating a past water/weight/BP
+  // entry. Set client-side in an effect (not directly in render) — same
+  // "today" timezone rule as everywhere else in this app. Water/Weight only
+  // let you change the date (they combine it with the current time-of-day
+  // via combineDateWithNow) — Blood Pressure also lets you change the time,
+  // since time-of-day is clinically relevant for a BP reading in a way it
+  // isn't for a quick water/weight log.
   const [today, setToday] = useState("");
   const [waterDate, setWaterDate] = useState("");
   const [weightDate, setWeightDate] = useState("");
   const [bpDate, setBpDate] = useState("");
+  const [bpTime, setBpTime] = useState("");
   useEffect(() => {
+    const now = new Date();
     const t = localTodayString();
     setToday(t);
     setWaterDate(t);
     setWeightDate(t);
     setBpDate(t);
+    setBpTime(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
   }, []);
 
   const reset = () => {
+    const now = new Date();
     setView("menu");
     setCustomMl("");
     setWeightValue("");
@@ -80,6 +88,7 @@ export function CaptureSheet({
     setWaterDate(today);
     setWeightDate(today);
     setBpDate(today);
+    setBpTime(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
   };
 
   const handleClose = () => {
@@ -110,8 +119,10 @@ export function CaptureSheet({
     const systolic = Number(bpSystolic);
     const diastolic = Number(bpDiastolic);
     if (!systolic || !diastolic) return;
+    const date = bpDate || localTodayString();
+    const time = bpTime || "00:00";
     startTransition(async () => {
-      await logBloodPressureAction(systolic, diastolic, combineDateWithNow(bpDate || localTodayString()), bpNotes.trim() || undefined);
+      await logBloodPressureAction(systolic, diastolic, new Date(`${date}T${time}`).toISOString(), bpNotes.trim() || undefined);
       setSaved(true);
       setTimeout(handleClose, 900);
     });
@@ -353,17 +364,33 @@ export function CaptureSheet({
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="text-xs font-medium text-black/50 dark:text-white/50">Date</label>
-                      <input
-                        type="date"
-                        value={bpDate}
-                        max={today || undefined}
-                        onChange={(e) => setBpDate(e.target.value)}
-                        className="h-9 rounded-lg border border-black/[0.08] bg-white/70 px-2.5 text-sm outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-black/50 dark:text-white/50">Date</label>
+                        <input
+                          type="date"
+                          value={bpDate}
+                          max={today || undefined}
+                          onChange={(e) => setBpDate(e.target.value)}
+                          className="h-9 w-full rounded-lg border border-black/[0.08] bg-white/70 px-2.5 text-sm outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-black/50 dark:text-white/50">Time</label>
+                        <input
+                          type="time"
+                          value={bpTime}
+                          onChange={(e) => setBpTime(e.target.value)}
+                          className="h-9 w-full rounded-lg border border-black/[0.08] bg-white/70 px-2.5 text-sm outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                        />
+                      </div>
                     </div>
 
+                    {/* min-w-0 on both inputs — two flex-1 number inputs
+                        otherwise refuse to shrink below their intrinsic
+                        content width (flex's default min-width: auto), which
+                        pushed the diastolic field off the edge of the sheet
+                        on narrow phones. Same bug class as ARCHITECTURE.md #8. */}
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -372,16 +399,16 @@ export function CaptureSheet({
                         value={bpSystolic}
                         onChange={(e) => setBpSystolic(e.target.value)}
                         autoFocus
-                        className="h-14 flex-1 rounded-xl border border-black/[0.08] bg-white/70 px-4 text-2xl font-semibold tabular-nums outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                        className="h-14 min-w-0 flex-1 rounded-xl border border-black/[0.08] bg-white/70 px-4 text-2xl font-semibold tabular-nums outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
                       />
-                      <span className="text-lg text-black/30 dark:text-white/30">/</span>
+                      <span className="shrink-0 text-lg text-black/30 dark:text-white/30">/</span>
                       <input
                         type="number"
                         inputMode="numeric"
                         placeholder="Diastolic"
                         value={bpDiastolic}
                         onChange={(e) => setBpDiastolic(e.target.value)}
-                        className="h-14 flex-1 rounded-xl border border-black/[0.08] bg-white/70 px-4 text-2xl font-semibold tabular-nums outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
+                        className="h-14 min-w-0 flex-1 rounded-xl border border-black/[0.08] bg-white/70 px-4 text-2xl font-semibold tabular-nums outline-none focus:border-emerald-500 dark:border-white/[0.08] dark:bg-white/[0.04]"
                       />
                     </div>
 

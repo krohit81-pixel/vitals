@@ -171,6 +171,18 @@ patching — worth doing again for any layout bug that isn't obviously root-caus
 from reading the JSX alone, since flexbox sizing interactions like this are easy
 to misjudge without seeing it render.
 
+**Hit a third time (v1.1.4), a variant:** `CaptureSheet`'s Blood Pressure quick-add
+view (the home "+" sheet) put two `flex-1` number inputs (systolic/diastolic) side
+by side with **neither** given `min-w-0` — no `shrink-0` sibling this time, just two
+equal flex items, but the same root cause: an `<input>`'s default `min-width: auto`
+let the first field claim its full intrinsic content width and pushed the second
+completely off the edge of the sheet on a real device. (A quick repro in this
+sandbox's own browser engine didn't reproduce it as severely — worth noting that
+`min-w-0`'s absence is a latent bug even when it happens not to bite in whatever
+browser you're testing with; add it prophylactically on *any* multi-flex-1-child
+row, don't wait for a specific engine to expose it.) Fixed the same way: `min-w-0`
+on both inputs, `shrink-0` on the `/` separator between them.
+
 ### 9. Recharts: don't trust the default Y-axis domain, and don't trust its "nice tick" generator against a custom domain either
 
 **Hit twice in back-to-back rounds (v0.9.4, v0.9.5), same component

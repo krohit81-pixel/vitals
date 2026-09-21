@@ -2,6 +2,20 @@
 
 Consolidated from each round's individual change notes. Newest first.
 
+## v1.1.4
+
+- **Fixed the Blood Pressure quick-add sheet (home "+" → Log Blood Pressure)
+  overflowing off-screen.** The systolic/diastolic inputs were two `flex-1`
+  fields with no `min-w-0` — same bug class as ARCHITECTURE.md #8 (a flex
+  item's default `min-width: auto` refuses to shrink below its content's
+  intrinsic width), so the diastolic field got pushed past the edge of the
+  sheet instead of sharing space evenly. Fixed with `min-w-0` on both inputs.
+- **Added a Time field.** The quick-add sheet only let you change the date
+  (combining it with the current time-of-day, same as Water/Weight) — Blood
+  Pressure now also has a separate Time input, since time-of-day is
+  clinically relevant for a reading in a way it isn't for a quick water/
+  weight log. Water and Weight are unchanged (date-only, by design).
+
 ## v1.1.3
 
 - **The v1.1.2 fix wasn't enough — "Export PDF" now actually generates a
